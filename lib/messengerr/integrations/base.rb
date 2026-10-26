@@ -30,9 +30,9 @@ module Messengerr
         @credentials = credentials
       end
 
-      # Send `message` (rendered text) to each recipient.
+      # Send each [recipient, rendered_message] pair.
       # → Array of Result, one per recipient.
-      def send_batch(recipients, message, options)
+      def send_batch(pairs, options)
         raise NotImplementedError, "#{self.class.name} must implement #send_batch"
       end
 

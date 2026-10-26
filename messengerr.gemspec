@@ -18,6 +18,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "base64", "~> 0.2"
+  spec.add_dependency "csv", "~> 3.3"
   spec.add_dependency "phonelib", "~> 0.8"
   spec.add_dependency "zeitwerk", "~> 2.6"
 

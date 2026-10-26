@@ -1,0 +1,7 @@
+name,email,phone,fail
+Alice,alice@example.com,+12025550123,no
+Bob,bob@example.com,+15551234567,no
+Bad Email,not-an-email,+15551234567,no
+Bad Phone,bad@example.com,123,no
+Empty,,,no
+Sender Fails,fails@example.com,+15557654321,yes

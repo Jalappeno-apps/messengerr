@@ -23,8 +23,14 @@ module Messengerr
         true
       end
 
-      def send_batch(recipients, message, options)
-        recipients.map { Result.new(recipient: _1, status: :sent) }
+      def send_batch(pairs, options)
+        pairs.map do |recipient, _message|
+          if recipient.row["fail"] == "yes"
+            Result.new(recipient:, status: :failed, reason: "fake send failure")
+          else
+            Result.new(recipient:, status: :sent, provider_id: "fake-#{recipient.row_number}")
+          end
+        end
       end
     end
   end
