@@ -2,27 +2,47 @@ require "optparse"
 
 module Messengerr
   class CLI
-    def self.start(argv, out: $stdout)
-      new(out:).start(argv)
+    BANNER = <<~TEXT
+      Usage: messengerr <command>
+
+      Commands:
+        credentials  Manage integration credentials (setup|list|verify|delete)
+        send         Send a message to a CSV contact list
+        integrations List registered integrations
+    TEXT
+
+    def self.start(argv, prompter: Prompter.new, credentials: Credentials.new, out: $stdout)
+      new(prompter:, credentials:, out:).start(argv)
     end
 
-    def initialize(out: $stdout)
+    def initialize(prompter:, credentials:, out: $stdout)
+      @prompter = prompter
+      @credentials = credentials
       @out = out
     end
 
     def start(argv)
-      parser = OptionParser.new do |opts|
-        opts.banner = "Usage: messengerr <command>\n\nCommands:\n" \
-                      "  credentials  Manage integration credentials\n" \
-                      "  send         Send a message to a CSV contact list\n" \
-                      "  integrations List registered integrations"
-        opts.version = Messengerr::VERSION
-        opts.on("-h", "--help") { @out.puts opts; return 0 }
+      command = argv.first
+
+      case command
+      when "credentials"
+        CLI::CredentialsCommand.new(prompter: @prompter, credentials: @credentials).run(argv[1..])
+      when "send"
+        CLI::SendCommand.new(prompter: @prompter, credentials: @credentials).run
+      when "integrations"
+        CLI::IntegrationsCommand.new(prompter: @prompter, credentials: @credentials).run
+      when "-h", "--help", nil
+        @out.puts BANNER
+        0
+      when "-v", "--version"
+        @out.puts Messengerr::VERSION
+        0
+      else
+        @out.puts "messengerr: unknown command '#{command}'"
+        @out.puts BANNER
+        1
       end
-      parser.parse(argv)
-      @out.puts parser
-      0
-    rescue OptionParser::ParseError => e
+    rescue Error => e
       @out.puts "messengerr: #{e.message}"
       1
     end

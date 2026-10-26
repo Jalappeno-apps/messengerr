@@ -13,6 +13,10 @@ module Messengerr
         Setups::Fake
       end
 
+      def self.options_class
+        SendingOptions::Base
+      end
+
       def initialize(credentials)
         @credentials = credentials
       end
