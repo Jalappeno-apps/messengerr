@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require "messengerr"
+
+exit Messengerr::CLI.start(ARGV)

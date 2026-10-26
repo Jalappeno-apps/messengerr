@@ -1,0 +1,4 @@
+/.bundle/
+/pkg/
+/config/credentials.yml.enc
+/config/master.key

@@ -1,0 +1,28 @@
+require_relative "lib/messengerr/version"
+
+Gem::Specification.new do |spec|
+  spec.name          = "messengerr"
+  spec.version       = Messengerr::VERSION
+  spec.authors       = ["Messengerr contributors"]
+  spec.summary       = "Send templated messages to CSV contact lists over email and SMS."
+  spec.description   = "Interactive CLI that renders {{placeholder}} messages against a CSV " \
+                       "contact list and dispatches through pluggable services scoped by " \
+                       "delivery method (email, sms)."
+  spec.homepage      = "https://github.com/brolinr/messengerr"
+  spec.license       = "MIT"
+  spec.required_ruby_version = ">= 3.1"
+
+  spec.files = Dir["lib/**/*", "exe/*", "README.md", "LICENSE"]
+  spec.bindir = "exe"
+  spec.executables = ["messengerr"]
+  spec.require_paths = ["lib"]
+
+  spec.add_dependency "phonelib", "~> 0.8"
+  spec.add_dependency "zeitwerk", "~> 2.6"
+
+  spec.add_development_dependency "clicksend_client", "~> 5.0"
+  spec.add_development_dependency "postmark", "~> 1.25"
+  spec.add_development_dependency "rake", "~> 13.0"
+  spec.add_development_dependency "rspec", "~> 3.13"
+  spec.add_development_dependency "webmock", "~> 3.23"
+end
