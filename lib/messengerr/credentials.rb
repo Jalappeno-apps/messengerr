@@ -3,7 +3,7 @@ require "fileutils"
 require "securerandom"
 
 module Messengerr
-  # Encrypted YAML store for service credentials (Rails-credentials-style).
+  # Encrypted YAML store for integration credentials (Rails-credentials-style).
   # The encrypted file and its master key live inside the installed gem
   # directory so both are removed when the gem is uninstalled.
   class Credentials
@@ -12,23 +12,23 @@ module Messengerr
       @key_path = key_path
     end
 
-    def read(service_key)
-      data.fetch("services", {}).fetch(service_key.to_s, nil)
+    def read(integration_key)
+      data.fetch("integrations", {}).fetch(integration_key.to_s, nil)
     end
 
-    def write(service_key, values)
+    def write(integration_key, values)
       merged = data
-      merged["services"] ||= {}
-      merged["services"][service_key.to_s] = values.transform_keys(&:to_s)
+      merged["integrations"] ||= {}
+      merged["integrations"][integration_key.to_s] = values.transform_keys(&:to_s)
       persist(merged)
     end
 
-    def configured?(service_key)
-      !read(service_key).nil?
+    def configured?(integration_key)
+      !read(integration_key).nil?
     end
 
     def keys
-      data.fetch("services", {}).keys
+      data.fetch("integrations", {}).keys
     end
 
     def exists?

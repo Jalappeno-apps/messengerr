@@ -13,9 +13,9 @@ module Messengerr
     def start(argv)
       parser = OptionParser.new do |opts|
         opts.banner = "Usage: messengerr <command>\n\nCommands:\n" \
-                      "  credentials  Manage service credentials\n" \
+                      "  credentials  Manage integration credentials\n" \
                       "  send         Send a message to a CSV contact list\n" \
-                      "  services     List registered services"
+                      "  integrations List registered integrations"
         opts.version = Messengerr::VERSION
         opts.on("-h", "--help") { @out.puts opts; return 0 }
       end

@@ -9,7 +9,7 @@ RSpec.describe Messengerr::Credentials do
   let(:key_path) { File.join(@dir, "config", "master.key") }
   let(:credentials) { described_class.new(credentials_path:, key_path:) }
 
-  it "writes and reads back service credentials" do
+  it "writes and reads back integration credentials" do
     credentials.write(:postmark, { server_token: "abc", from: "me@x.com" })
     expect(credentials.read(:postmark)).to eq("server_token" => "abc", "from" => "me@x.com")
   end
@@ -38,19 +38,19 @@ RSpec.describe Messengerr::Credentials do
     expect(File.stat(credentials_path).mode & 0o777).to eq(0o600)
   end
 
-  it "merges multiple services" do
+  it "merges multiple integrations" do
     credentials.write(:postmark, { server_token: "abc" })
     credentials.write(:clicksend, { username: "u" })
     expect(credentials.keys).to contain_exactly("postmark", "clicksend")
   end
 
-  it "reports configured? only for stored services" do
+  it "reports configured? only for stored integrations" do
     credentials.write(:postmark, { server_token: "abc" })
     expect(credentials.configured?(:postmark)).to be(true)
     expect(credentials.configured?(:clicksend)).to be(false)
   end
 
-  it "returns nil for unconfigured services" do
+  it "returns nil for unconfigured integrations" do
     expect(credentials.read(:nope)).to be_nil
   end
 

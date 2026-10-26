@@ -11,6 +11,11 @@ module Messengerr
         loader.setup
       end
     end
+
+    # Third-party gems call this on load to register an Integrations::Base subclass.
+    def register_integration(integration_class)
+      Registry.register(integration_class)
+    end
   end
 end
 
