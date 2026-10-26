@@ -6,7 +6,7 @@ module Messengerr
   class << self
     def loader
       @loader ||= Zeitwerk::Loader.for_gem.tap do |loader|
-        loader.inflector.inflect("cli" => "CLI")
+        loader.inflector.inflect("cli" => "CLI", "clicksend" => "ClickSend")
         loader.ignore("#{__dir__}/messengerr/version.rb", "#{__dir__}/messengerr/errors.rb")
         loader.setup
       end

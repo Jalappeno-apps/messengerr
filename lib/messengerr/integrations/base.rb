@@ -14,11 +14,15 @@ module Messengerr
 
       # Parallel namespaces resolved by convention; override to wire explicitly.
       def self.setup_class
-        Messengerr::Setups.const_get(integration_key.to_s.capitalize)
+        Messengerr::Setups.const_get(class_name)
       end
 
       def self.options_class
-        Messengerr::SendingOptions.const_get(integration_key.to_s.capitalize)
+        Messengerr::SendingOptions.const_get(class_name)
+      end
+
+      def self.class_name
+        name.split("::").last
       end
 
       def self.inherited(subclass)

@@ -1,13 +1,5 @@
 module Messengerr
-  # Per-recipient send outcome plus the aggregate Report.
-  Result = Data.define(:recipient, :status, :reason, :provider_id) do
-    def initialize(recipient:, status:, reason: nil, provider_id: nil)
-      super
-    end
-
-    def sent? = status == :sent
-  end
-
+  # Aggregate outcome of a send run: Results plus dropped validation defects.
   class Report
     attr_reader :results, :dropped
 
