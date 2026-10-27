@@ -28,7 +28,7 @@ module DocsIntegrations
     out = +<<~MD
       ---
       title: Integrations
-      nav_order: 8
+      nav_order: 9
       description: "Reference for every messengerr integration: delivery method, credential keys, and sending options, generated from the code."
       ---
 
@@ -62,7 +62,8 @@ module DocsIntegrations
       - **Delivers:** #{integration.delivery_method}
       - **Set up with:** `messengerr credentials setup #{integration.integration_key}`
       - **Required credentials:** #{keys(integration.setup_class.required_keys)}
-      - **Optional credentials:** #{keys(integration.setup_class.optional_keys)}#{limits(options)}
+      - **Optional credentials:** #{keys(integration.setup_class.optional_keys)}
+      - **Message formats:** #{integration.formats.join(', ')}#{limits(options)}
 
       | Sending option | Command-line flag | What it does |
       | --- | --- | --- |

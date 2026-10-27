@@ -24,6 +24,7 @@ A placeholder is a column name in double braces: `{% raw %}{{name}}{% endraw %}`
 - Substitution happens once. If a CSV value itself contains `{% raw %}{{x}}{% endraw %}`, it is inserted as-is and is not expanded.
 - An empty cell for a placeholder is an error for that row (`column "plan" is empty for {% raw %}{{plan}}{% endraw %}`), caught at the preview.
 - The subject (email) follows the same rules as the body.
+- In an HTML message (`--html`) every substituted value is HTML-escaped, so CSV data cannot add markup. Messages can also come from a multi-line file. See [HTML and multi-line messages]({{ '/html-email.html' | relative_url }}).
 
 Because a literal `{% raw %}{{` or `}}{% endraw %}` in your text is treated as a placeholder, you cannot send those character pairs verbatim.
 

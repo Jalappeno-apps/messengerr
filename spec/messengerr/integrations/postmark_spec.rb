@@ -11,6 +11,7 @@ RSpec.describe Messengerr::Integrations::Postmark do
     it { expect(described_class.integration_key).to eq(:postmark) }
     it { expect(described_class.setup_class).to eq(Messengerr::Setups::Postmark) }
     it { expect(described_class.options_class).to eq(Messengerr::SendingOptions::Postmark) }
+    it { expect(described_class.formats).to eq([ :text, :html ]) }
   end
 
   describe "#verify!" do
@@ -74,6 +75,32 @@ RSpec.describe Messengerr::Integrations::Postmark do
       it "treats a dropped connection as uncertain" do
         stub_request(:post, url).to_raise(Errno::ECONNRESET)
         expect(outcome.uncertain).to be(true)
+      end
+    end
+
+    describe "body format" do
+      let(:url) { "https://api.postmarkapp.com/email" }
+      let(:ok) { { status: 200, body: '{"MessageID":"x","ErrorCode":0}' } }
+
+      def sent_body(delivery)
+        captured = nil
+        stub_request(:post, url).with { |req| captured = JSON.parse(req.body) }.to_return(ok)
+        integration.send_batch([ delivery ], options)
+        captured
+      end
+
+      it "sends HtmlBody and no TextBody for an HTML delivery" do
+        body = sent_body(Messengerr::Delivery.new(recipient:, body: "<p>Hi</p>", subject: "S", format: :html))
+
+        expect(body).to include("HtmlBody" => "<p>Hi</p>")
+        expect(body).not_to have_key("TextBody")
+      end
+
+      it "sends TextBody and no HtmlBody for a text delivery" do
+        body = sent_body(Messengerr::Delivery.new(recipient:, body: "line one\nline two", subject: "S"))
+
+        expect(body).to include("TextBody" => "line one\nline two")
+        expect(body).not_to have_key("HtmlBody")
       end
     end
 

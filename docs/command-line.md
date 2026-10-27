@@ -1,6 +1,6 @@
 ---
 title: Command line
-nav_order: 7
+nav_order: 8
 description: "Reference for every messengerr command, flag, environment variable, and exit code."
 ---
 
@@ -45,6 +45,8 @@ Usage: messengerr send [flags]
         --batch-size N               Messages per batch
         --rate-limit N               Batches per second
         --from ADDRESS               Override the sender address/ID
+        --message-file FILE          Read a multi-line plain-text message from FILE instead of typing one line
+        --html FILE                  Send FILE as an HTML email (email only; HTML only, no text version)
     -h, --help                       Show this help
 ```
 
@@ -56,6 +58,8 @@ Usage: messengerr send [flags]
 | `--batch-size N` | A positive integer. Default `50`. ClickSend allows at most `1000`. |
 | `--rate-limit N` | A positive integer. Default `10`. Counts **batches** per second, not messages (see [Limitations]({{ '/limitations.html' | relative_url }})). |
 | `--from ADDRESS` | Overrides the `from` stored with the integration for this run. |
+| `--message-file FILE` | Multi-line plain-text message, for email or SMS. Skips the message prompt. Cannot be combined with `--html`. See [HTML and multi-line messages]({{ '/html-email.html' | relative_url }}). |
+| `--html FILE` | Sends the file as an HTML email. Email only, and only for integrations that can send HTML (Postmark). The first message is also written to `messengerr-preview.html`. |
 
 Bad flags are reported as `messengerr: invalid option: --bogus (see 'messengerr send --help')` and exit `1` before any prompt. Stray arguments (`messengerr send file.csv`) are rejected the same way: the CSV path is asked for inside the wizard.
 

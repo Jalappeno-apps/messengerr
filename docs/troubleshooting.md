@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting
-nav_order: 10
+nav_order: 11
 description: "Error messages you may see from messengerr, what each one means, and how to fix it."
 ---
 

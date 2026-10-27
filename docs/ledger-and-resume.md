@@ -1,6 +1,6 @@
 ---
 title: Ledger and resume
-nav_order: 6
+nav_order: 7
 description: "The messengerr send ledger records every result as it happens. How --resume skips recipients already sent, what uncertain failures are, and what Ctrl-C does."
 ---
 

@@ -29,7 +29,9 @@ Run `messengerr credentials setup <name>` first.
 
 ## The message
 
-The message is a single line. Use `{% raw %}{{column}}{% endraw %}` placeholders, for example `Hi {% raw %}{{name}}{% endraw %}, your {% raw %}{{plan}}{% endraw %} invoice is ready.` For email you are also asked for a **subject**, and the subject can contain placeholders too. A blank subject is not accepted: you are asked again.
+By default the message is a single line you type. Use `{% raw %}{{column}}{% endraw %}` placeholders, for example `Hi {% raw %}{{name}}{% endraw %}, your {% raw %}{{plan}}{% endraw %} invoice is ready.` For email you are also asked for a **subject**, and the subject can contain placeholders too. A blank subject is not accepted: you are asked again.
+
+For a multi-line message, or an HTML email, start the command with `--message-file FILE` or `--html FILE` and the wizard skips this prompt. See [HTML and multi-line messages]({{ '/html-email.html' | relative_url }}).
 
 See [CSV and templates]({{ '/csv-and-templates.html' | relative_url }}) for the exact placeholder rules.
 
@@ -53,7 +55,7 @@ Answer `y` to drop the listed rows and carry on, or `n` to abort so you can fix 
 
 Before anything is sent, every message is rendered. If any row cannot be rendered (an unmapped placeholder, or an empty cell for a placeholder), the run aborts and tells you which row, so a half-filled message never goes out.
 
-Then you see the total and the first three messages:
+Then you see the total and the first three messages (an HTML message shows its size instead of its markup, and the first one is written to `messengerr-preview.html` so you can open it in a browser):
 
 ```text
 --- Preview (2 messages) ---

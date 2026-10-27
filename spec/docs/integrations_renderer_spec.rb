@@ -19,12 +19,17 @@ RSpec.describe DocsIntegrations do
     expect(page).to include("| `message_stream` | not exposed yet |")
   end
 
+  it "states which message formats each integration can send" do
+    expect(page).to match(/## `postmark`.*?\*\*Message formats:\*\* text, html/m)
+    expect(page).to match(/## `clicksend`.*?\*\*Message formats:\*\* text\n/m)
+  end
+
   it "states ClickSend's batch limit from the code" do
     expect(page).to include("**Maximum batch size:** #{Messengerr::SendingOptions::ClickSend::MAX_BATCH}")
   end
 
   it "has the front matter the docs site needs" do
-    expect(page).to start_with("---\ntitle: Integrations\nnav_order: 8\n")
+    expect(page).to start_with("---\ntitle: Integrations\nnav_order: 9\n")
   end
 
   it "fails loudly when a sending option has no description, so the docs cannot silently go stale" do

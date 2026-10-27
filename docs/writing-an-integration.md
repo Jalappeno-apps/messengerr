@@ -1,6 +1,6 @@
 ---
 title: Writing an integration
-nav_order: 9
+nav_order: 10
 description: "How to add a delivery provider to messengerr: the three classes, the result contract, uncertain failures, and how to load your integration today."
 ---
 
@@ -78,7 +78,7 @@ end
 
 | Object | Fields |
 |---|---|
-| `Delivery` | `recipient`, `body` (fully rendered), `subject` (rendered, or `nil` for SMS) |
+| `Delivery` | `recipient`, `body` (fully rendered), `subject` (rendered, or `nil` for SMS), `format` (`:text` or `:html`) |
 | `Recipient` | `contact` (normalised address or E.164 number), `row` (the CSV row hash), `row_number` |
 
 ## The result contract
@@ -100,6 +100,16 @@ Yielding each result as soon as you have it is optional, but worth doing if your
 
 Set explicit network timeouts. A call that can hang forever stalls the whole run.
 
+## HTML bodies
+
+By default messengerr only hands your integration plain text. To receive HTML, declare it:
+
+```ruby
+def self.formats = [ :text, :html ]
+```
+
+Then check `delivery.html?` (or `delivery.format`) when you build the request and send `delivery.body` as the provider's HTML field. HTML is **HTML only**: there is no plain-text twin. `messengerr send --html` is refused for any integration that does not list `:html`, so markup can never be sent as plain text by accident. The CSV values in an HTML `body` are already HTML-escaped.
+
 ## Loading your integration
 
 messengerr does not discover plugin gems automatically yet. Until it does, load your file before the CLI starts, for example with `RUBYOPT`:
@@ -118,5 +128,5 @@ An integration receives its own credentials and, for every send, each recipient'
 ## Current limits
 
 - The wizard and the contact validators understand two delivery methods, `:email` and `:sms`. A new kind of channel (push, chat) needs changes inside messengerr itself, not just a plugin.
-- Messages are plain text.
+- Messages are plain text unless your integration declares HTML support (below).
 - Sending options beyond `from`, `batch_size` and `rate_limit` are not reachable from the command line yet.

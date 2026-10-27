@@ -11,6 +11,7 @@ First release. messengerr sends templated email and SMS to a CSV contact list fr
 - A JSONL ledger records every result as it happens (mode `0600`). `--resume LEDGER` skips recipients already sent, matched by row number plus contact. Failures that may already have been delivered are marked uncertain and warned about before a retry or resume. Ctrl-C leaves an accurate ledger and exits `130`.
 - One row is one message: repeated contacts are not de-duplicated.
 - Flags: `--dry-run`, `--resume`, `--ledger`, `--batch-size`, `--rate-limit`, `--from`. Bad flags are reported cleanly. `messengerr send --help` lists them.
+- Multi-line messages with `--message-file FILE` (email and SMS) and HTML email with `--html FILE` (Postmark). HTML is HTML only (no text part); CSV values are HTML-escaped; the first message is written to `messengerr-preview.html` for viewing in a browser; `--html` is refused for SMS and for integrations that cannot send HTML.
 - UTF-8 CSVs, with or without a BOM, regardless of the shell's locale. Duplicate header names are rejected.
 - Documentation site under `docs/`, including a reference generated from the integration registry (`rake docs:integrations`).
 - Requires Ruby 3.2 or newer.

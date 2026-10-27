@@ -25,11 +25,11 @@ description: "How a messengerr send flows through the code, and what the main cl
 
 1. **Flags.** `OptionParser` fills a flags hash. Bad flags become a `Messengerr::Error`. `--resume` must point at a file that exists.
 2. **Delivery method and integration.** `Registry.configured_by_method` lists integrations that have stored credentials.
-3. **Message.** A single line for the body, and for email a subject. Both may contain placeholders.
+3. **Message.** A typed single line, or the contents of `--message-file` / `--html`, and for email a subject. Both may contain placeholders. Bad files and `--html` for SMS or a text-only integration are rejected here, before the CSV is read.
 4. **CSV.** `CsvSource.from` returns headers and rows (UTF-8 with optional BOM; duplicate headers rejected).
 5. **Mapping.** `Placeholder.extract` finds the names in the body and subject. The user maps each to a column and picks the contact column.
 6. **Validation.** `ContactValidator.validate` returns `Recipient`s and `Defect`s. The user drops the defects or aborts.
-7. **Preview and confirm.** `Renderer.render` turns each recipient into a `Delivery` (body and subject). Any failure aborts. With `--resume`, recipients already `sent` in the ledger are filtered out and earlier uncertain attempts are warned about. The user sees the count and the first messages, then confirms.
+7. **Preview and confirm.** `Renderer.render` turns each recipient into a `Delivery` (body, subject and format; values are HTML-escaped for HTML bodies). Any failure aborts. With `--resume`, recipients already `sent` in the ledger are filtered out and earlier uncertain attempts are warned about. The user sees the count and the first messages, then confirms.
 8. **Send.** The integration is built from the stored credentials. The options class is instantiated and the CLI-settable options (`CLI_OPTIONS`) are applied. A `Ledger` is created and checked for writability. `Sender#deliver` does the work.
 9. **Retry and report.** Failures are listed. The user may retry only the failed recipients. `Report` produces the summary and the exit code.
 

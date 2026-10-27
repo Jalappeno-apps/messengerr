@@ -1,9 +1,14 @@
+require "cgi"
+
 module Messengerr
   # Substitutes {{placeholder}} tokens with values from a CSV row, using a
   # user-supplied mapping of placeholder name → column name. Any leftover
   # {{ or }} after substitution is a render failure — never sent literally.
+  #
+  # With `escape: true` (HTML messages) every substituted value is HTML-escaped,
+  # so CSV data can never inject markup. The template itself is trusted.
   module Renderer
-    def self.render(template, row, mapping)
+    def self.render(template, row, mapping, escape: false)
       rendered = template.gsub(Placeholder::PATTERN) do
         key = Regexp.last_match(1)
         column = mapping[key]
@@ -12,7 +17,7 @@ module Messengerr
         value = row[column]
         raise RenderError, "column \"#{column}\" is empty for {{#{key}}}" if value.nil? || value.strip.empty?
 
-        value.strip
+        escape ? CGI.escapeHTML(value.strip) : value.strip
       end
 
       if rendered.match?(/\{\{|\}\}/)

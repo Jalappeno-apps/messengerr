@@ -6,6 +6,10 @@ module Messengerr
         :email
       end
 
+      def self.formats
+        [ :text, :html ]
+      end
+
       def send_batch(deliveries, options)
         deliveries.map do |delivery|
           deliver_one(delivery, options).tap { |result| yield result if block_given? }
@@ -34,7 +38,7 @@ module Messengerr
             from: options.from || @credentials["from"],
             to: delivery.recipient.contact,
             subject:,
-            text_body: delivery.body,
+            **body_params(delivery),
             message_stream: options.message_stream,
             tag: options.tag,
             track_opens: options.track_opens
@@ -44,6 +48,11 @@ module Messengerr
       rescue StandardError => e
         Result.new(recipient: delivery.recipient, status: :failed, reason: e.message,
                    uncertain: !definitely_rejected?(e))
+      end
+
+      # Exactly one body: HTML mail is HTML only, text mail is text only.
+      def body_params(delivery)
+        delivery.html? ? { html_body: delivery.body } : { text_body: delivery.body }
       end
 
       # Only a 4xx from the API proves the message was not accepted. Timeouts,

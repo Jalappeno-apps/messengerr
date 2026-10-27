@@ -1,6 +1,6 @@
 ---
 title: Integrations
-nav_order: 8
+nav_order: 9
 description: "Reference for every messengerr integration: delivery method, credential keys, and sending options, generated from the code."
 ---
 
@@ -23,6 +23,7 @@ An integration is the provider that delivers your messages. Set one up with `mes
 - **Set up with:** `messengerr credentials setup postmark`
 - **Required credentials:** `server_token`, `from`
 - **Optional credentials:** none
+- **Message formats:** text, html
 
 | Sending option | Command-line flag | What it does |
 | --- | --- | --- |
@@ -42,6 +43,7 @@ An integration is the provider that delivers your messages. Set one up with `mes
 - **Set up with:** `messengerr credentials setup clicksend`
 - **Required credentials:** `username`, `api_key`
 - **Optional credentials:** `from`
+- **Message formats:** text
 - **Maximum batch size:** 1000
 
 | Sending option | Command-line flag | What it does |

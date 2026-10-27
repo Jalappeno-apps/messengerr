@@ -1,6 +1,6 @@
 ---
 title: Credentials
-nav_order: 5
+nav_order: 6
 description: "Where messengerr stores integration credentials, how they are encrypted, what that does and does not protect against, and how to remove them."
 ---
 

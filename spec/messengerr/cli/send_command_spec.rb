@@ -264,4 +264,173 @@ RSpec.describe Messengerr::CLI::SendCommand do
       expect(stub).not_to have_been_requested
     end
   end
+
+  describe "HTML and multi-line messages" do
+    around { |example| Dir.chdir(@dir) { example.run } }
+
+    let(:csv) { File.join(@dir, "people.csv") }
+    let(:html_file) { File.join(@dir, "letter.html") }
+    let(:text_file) { File.join(@dir, "letter.txt") }
+    let(:postmark_url) { "https://api.postmarkapp.com/email" }
+
+    before do
+      File.write(csv, "name,email\nAnn,ann@x.com\nTom & <b>Jerry</b>,tom@x.com\n")
+      File.write(html_file, "<html><body><h1>Hi {{name}}</h1></body></html>\n")
+    end
+
+    def capture_postmark
+      sent = []
+      stub_request(:post, postmark_url)
+        .with { |req| sent << JSON.parse(req.body) }
+        .to_return(status: 200, body: '{"MessageID":"pm-1","ErrorCode":0}')
+      sent
+    end
+
+    # Runs the command, returning [error_or_nil, output] so we can also see what was printed before it failed.
+    def attempt(args, script = "")
+      output = StringIO.new
+      prompter = Messengerr::Prompter.new(input: StringIO.new(script), output:)
+      command = described_class.new(prompter:, credentials: @credentials)
+      error = begin
+        command.run([ "--ledger", @ledger, *args ])
+        nil
+      rescue Messengerr::Error => e
+        e
+      end
+      [ error, output.string ]
+    end
+
+    context "with the real Postmark integration" do
+      before { @credentials.write(:postmark, "server_token" => "tok", "from" => "me@x.com") }
+
+      it "sends each rendered HTML message with HTML-escaped values and a plain-text subject" do
+        sent = capture_postmark
+        # method, subject, csv, map {{name}}, contact column, confirm
+        script = [ "1", "Hello {{name}}", csv, "1", "2", "y" ].join("\n") + "\n"
+        code, output = run_wizard(script, [ "--html", html_file ])
+
+        expect(code).to eq(0)
+        expect(output).to include("Message: 1 line(s) from #{html_file}")
+        expect(output).not_to include("Message (use {{column}} placeholders):")
+        ann, tom = sent
+        expect(ann).to include("To" => "ann@x.com", "Subject" => "Hello Ann",
+                               "HtmlBody" => "<html><body><h1>Hi Ann</h1></body></html>")
+        expect(ann).not_to have_key("TextBody")
+        expect(tom["HtmlBody"]).to eq("<html><body><h1>Hi Tom &amp; &lt;b&gt;Jerry&lt;/b&gt;</h1></body></html>")
+        expect(tom["HtmlBody"]).not_to include("<b>Jerry")
+        expect(tom["Subject"]).to eq("Hello Tom & <b>Jerry</b>") # the subject is plain text, never escaped
+      end
+
+      it "previews HTML without dumping markup, writes a browsable preview file, and sends nothing on --dry-run" do
+        sent = capture_postmark
+        script = [ "1", "Hello {{name}}", csv, "1", "2" ].join("\n") + "\n"
+        code, output = run_wizard(script, [ "--html", html_file, "--dry-run" ])
+
+        expect(code).to eq(0)
+        expect(sent).to be_empty
+        expect(output).to include("Body: HTML, #{"<html><body><h1>Hi Ann</h1></body></html>".length} characters")
+        expect(output).not_to include("<h1>")
+        preview = File.join(File.realpath(@dir), "messengerr-preview.html") # Dir.pwd resolves symlinks
+        expect(output).to include("HTML preview of the first message: #{preview}")
+        expect(File.read(preview)).to eq("<html><body><h1>Hi Ann</h1></body></html>")
+        expect(File.stat(preview).mode & 0o777).to eq(0o600)
+      end
+
+      it "sends a multi-line plain-text message from --message-file, normalising line endings" do
+        File.binwrite(text_file, "Hi {{name}},\r\n\r\nSecond paragraph.\r\nBye\r\n\r\n")
+        sent = capture_postmark
+        script = [ "1", "Note for {{name}}", csv, "1", "2", "y" ].join("\n") + "\n"
+        _, output = run_wizard(script, [ "--message-file", text_file ])
+
+        expect(sent.first).to include("TextBody" => "Hi Ann,\n\nSecond paragraph.\nBye")
+        expect(sent.first).not_to have_key("HtmlBody")
+        expect(output).to include("Message: 4 line(s) from #{text_file}")
+        expect(output).to include("Body:\n  Hi Ann,\n  \n  Second paragraph.\n  Bye")
+        expect(File.exist?(File.join(@dir, "messengerr-preview.html"))).to be(false)
+      end
+
+      it "still aborts when an HTML template leaves a malformed placeholder, before anything is sent" do
+        File.write(html_file, "<p>Hi {{first-name}}</p>")
+        sent = capture_postmark
+        # no {{placeholders}} are recognised in the template, so there is nothing to map: method, subject, csv, contact column
+        script = [ "1", "Hello", csv, "2" ].join("\n") + "\n"
+        code, output = run_wizard(script, [ "--html", html_file ])
+
+        expect(code).to eq(1)
+        expect(output).to include("unrenderable placeholder left in message")
+        expect(sent).to be_empty
+      end
+    end
+
+    it "sends a multi-line SMS from --message-file" do
+      @credentials.write(:clicksend, "username" => "u", "api_key" => "k")
+      File.write(csv, "name,phone\nAnn,+12025550123\n")
+      File.write(text_file, "Hi {{name}}\nYour code is ready")
+      body = nil
+      stub_request(:post, "https://rest.clicksend.com/v3/sms/send")
+        .with { |req| body = JSON.parse(req.body) }
+        .to_return(status: 200, body: { data: { messages: [ { message_id: "m1", status: "SUCCESS" } ] } }.to_json)
+
+      script = [ "2", csv, "1", "2", "y" ].join("\n") + "\n"
+      code, = run_wizard(script, [ "--message-file", text_file ])
+
+      expect(code).to eq(0)
+      expect(body["messages"].first).to include("to" => "+12025550123", "body" => "Hi Ann\nYour code is ready")
+    end
+
+    describe "bad input is reported before it can cause harm" do
+      it "refuses both flags at once, before any prompt" do
+        error, output = attempt([ "--html", html_file, "--message-file", text_file ])
+
+        expect(error.message).to eq("use either --html or --message-file, not both (see `messengerr send --help`)")
+        expect(output).to be_empty
+      end
+
+      it "refuses a missing file before any prompt" do
+        error, output = attempt([ "--html", File.join(@dir, "nope.html") ])
+
+        expect(error.message).to match(/message file not found/)
+        expect(output).to be_empty
+      end
+
+      it "refuses an empty file before any prompt" do
+        File.write(text_file, "  \n\n")
+        error, output = attempt([ "--message-file", text_file ])
+
+        expect(error.message).to match(/message file is empty/)
+        expect(output).to be_empty
+      end
+
+      it "refuses a file that is not UTF-8 before any prompt" do
+        File.binwrite(text_file, "Caf\xE9 {{name}}")
+        error, output = attempt([ "--message-file", text_file ])
+
+        expect(error.message).to match(/not valid UTF-8/)
+        expect(output).to be_empty
+      end
+
+      it "accepts a UTF-8 file with a byte-order mark" do
+        File.binwrite(text_file, "\xEF\xBB\xBFHi {{name}}")
+        @credentials.write(:fake, "token" => "ok")
+        script = [ "1", "Sub", csv, "1", "2", "y", "n" ].join("\n") + "\n"
+        _, output = run_wizard(script, [ "--message-file", text_file, "--dry-run" ])
+
+        expect(output).to include("Body: Hi Ann")
+      end
+
+      it "refuses --html for SMS, right after the delivery method is chosen" do
+        error, output = attempt([ "--html", html_file ], "2\n")
+
+        expect(error.message).to match(/--html is only for email/)
+        expect(output).not_to include("Message")
+      end
+
+      it "refuses --html for an integration that can't send HTML, so markup is never sent as text" do
+        @credentials.write(:fake, "token" => "ok") # the Fake integration declares text only
+        error, = attempt([ "--html", html_file ], "1\n")
+
+        expect(error.message).to eq("fake can't send HTML email")
+      end
+    end
+  end
 end

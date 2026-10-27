@@ -8,6 +8,7 @@ RSpec.describe Messengerr::Integrations::ClickSend do
     it { expect(described_class.integration_key).to eq(:clicksend) }
     it { expect(described_class.setup_class).to eq(Messengerr::Setups::ClickSend) }
     it { expect(described_class.options_class).to eq(Messengerr::SendingOptions::ClickSend) }
+    it { expect(described_class.formats).to eq([ :text ]) }
   end
 
   describe "#verify!" do

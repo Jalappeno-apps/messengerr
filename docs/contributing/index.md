@@ -1,6 +1,6 @@
 ---
 title: Contributing
-nav_order: 13
+nav_order: 14
 has_children: true
 permalink: /contributing/
 description: "Contribute to messengerr: set up the project, read the architecture, and learn how integrations, tests and releases work."

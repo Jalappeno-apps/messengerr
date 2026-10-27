@@ -23,6 +23,7 @@ An integration is three classes with the **same name** in parallel namespaces: `
 
 The contract (also in `docs/writing-an-integration.md`):
 
+- `Integrations::Base.formats` lists the body formats the integration can send; the default is `[ :text ]`. Declare `:html` only if you send `delivery.body` as the provider's HTML field when `delivery.html?`, one body per message, never both.
 - `send_batch(deliveries, options)` returns exactly one `Result` per delivery. It may `yield` each result as it lands so the ledger stays exact if a run dies mid-batch.
 - Mark a failure `uncertain: true` unless the provider **definitely rejected** it. A timeout after sending, a dropped connection, a 5xx or an unreadable response is uncertain. Raise `IntegrationError` for a definite failure and `UncertainError` for an uncertain one.
 - `verify!` is a cheap live call and raises `IntegrationError` with no secret in the message.
@@ -50,6 +51,7 @@ These are the product's promises. A change that weakens one needs a deliberate d
 - **Nothing is sent before the user has seen a preview and confirmed.** `--dry-run` never sends or writes a ledger.
 - **Never send unrendered text.** Any leftover `{{` or `}}` aborts the run.
 - **One row is one message.** Contacts are not de-duplicated.
+- **CSV values are HTML-escaped in HTML mode, and HTML only reaches integrations that declare it.** `Renderer.render(..., escape: true)` for `--html`; the subject is never escaped; the CLI refuses `--html` for SMS and for integrations without `:html` in `formats`.
 - **One `Result` per `Delivery`.** `Sender` fills any gap with a failed, uncertain result.
 - **Record as results land.** The ledger is appended per result, not at the end, and the ledger must be writable before the first send. If it stops being writable, stop sending.
 - **Uncertain unless definitely rejected.** This drives the duplicate warning before a retry or `--resume`.

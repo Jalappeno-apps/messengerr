@@ -1,6 +1,6 @@
 ---
 title: Changelog
-nav_order: 12
+nav_order: 13
 description: "Release notes for messengerr, kept in the repository's CHANGELOG.md, and the project's MIT license."
 ---
 

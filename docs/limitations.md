@@ -1,6 +1,6 @@
 ---
 title: Limitations
-nav_order: 11
+nav_order: 12
 description: "What messengerr does not do yet: message format limits, rate limiting semantics, credential storage, resume caveats, and compliance responsibilities."
 ---
 
@@ -18,8 +18,9 @@ messengerr is young. These are the things worth knowing before a large send.
 
 ## Messages
 
-- **Single line.** The message and subject are read as one line each. There is no multi-line body.
-- **Plain text only.** Email is sent as plain text: no HTML, attachments, CC/BCC or reply-to.
+- **Typed messages are one line.** The message and subject you type are one line each. For a multi-line message, use `--message-file`.
+- **HTML email is HTML only.** `--html` sends an HTML body and no plain-text part, and nothing is generated for clients that prefer text. It works for email through Postmark only. See [HTML and multi-line messages]({{ '/html-email.html' | relative_url }}).
+- **No attachments, inline images, CC/BCC or reply-to.** Images in HTML must be hosted at a public address.
 - **No literal `{% raw %}{{` or `}}{% endraw %}`.** Those pairs are always treated as placeholders. See [CSV and templates]({{ '/csv-and-templates.html' | relative_url }}).
 - **SMS segment counts are estimates.** The preview assumes standard 160/153-character segments. Emoji and many accented characters use shorter ones, so the real count and cost can be higher.
 

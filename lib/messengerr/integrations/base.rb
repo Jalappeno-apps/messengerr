@@ -8,6 +8,13 @@ module Messengerr
         raise NotImplementedError, "#{name} must declare .delivery_method"
       end
 
+      # Body formats this integration can send: :text, and :html if it
+      # delivers HTML. The CLI refuses --html for an integration that doesn't
+      # list :html, so markup is never sent as plain text by mistake.
+      def self.formats
+        [ :text ]
+      end
+
       def self.integration_key
         name.split("::").last.downcase.to_sym
       end

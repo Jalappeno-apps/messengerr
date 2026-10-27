@@ -10,7 +10,7 @@ module Messengerr
     #   → retry failed only.
     #
     # Flags: --dry-run, --resume LEDGER, --ledger PATH, --batch-size N,
-    #        --rate-limit N, --from ADDRESS
+    #        --rate-limit N, --from ADDRESS, --message-file FILE, --html FILE
     class SendCommand
       SMS_SEGMENT = 160
       # Sending options settable from flags (the integrations support more; see docs/integrations.md).
@@ -29,9 +29,12 @@ module Messengerr
           return 0
         end
         check_resume_ledger!
+        @file_message = load_message_file
 
         method = pick_delivery_method
+        check_html_method!(method)
         integration_class = pick_integration(method) or return 1
+        check_html_supported!(integration_class)
         message, subject = collect_message(method)
         source = load_csv or return 1
         mapping = map_placeholders(message, subject, source)
@@ -50,6 +53,7 @@ module Messengerr
         @parser = build_parser
         extra = @parser.parse(args)
         raise Error, "unexpected argument: #{extra.join(' ')} (see `messengerr send --help`)" unless extra.empty?
+        raise Error, "use either --html or --message-file, not both (see `messengerr send --help`)" if @flags[:html] && @flags[:message_file]
       rescue OptionParser::ParseError => e
         raise Error, "#{e.message} (see `messengerr send --help`)"
       end
@@ -66,6 +70,8 @@ module Messengerr
           opts.on("--batch-size N", Integer, "Messages per batch") { |v| @flags[:batch_size] = positive(v) }
           opts.on("--rate-limit N", Integer, "Batches per second") { |v| @flags[:rate_limit] = positive(v) }
           opts.on("--from ADDRESS", "Override the sender address/ID") { |v| @flags[:from] = v }
+          opts.on("--message-file FILE", "Read a multi-line plain-text message from FILE instead of typing one line") { |v| @flags[:message_file] = v }
+          opts.on("--html FILE", "Send FILE as an HTML email (email only; HTML only, no text version)") { |v| @flags[:html] = v }
           opts.on("-h", "--help", "Show this help") { @flags[:help] = true }
         end
       end
@@ -83,6 +89,39 @@ module Messengerr
 
         raise Error, "resume ledger not found: #{@flags[:resume]}"
       end
+
+      # The message from --html / --message-file, normalised, or nil when the
+      # message will be typed. Problems surface before any prompt.
+      def load_message_file
+        path = @flags[:html] || @flags[:message_file]
+        return nil unless path
+
+        expanded = File.expand_path(path)
+        raise Error, "message file not found: #{path}" unless File.file?(expanded)
+
+        text = File.read(expanded, encoding: "bom|utf-8")
+        raise Error, "message file is not valid UTF-8: #{path}" unless text.valid_encoding?
+
+        text = text.gsub("\r\n", "\n").rstrip
+        raise Error, "message file is empty: #{path}" if text.empty?
+
+        text
+      rescue SystemCallError => e
+        raise Error, "cannot read message file #{path}: #{e.message}"
+      end
+
+      def check_html_method!(method)
+        raise Error, "--html is only for email; SMS messages are plain text (use --message-file)" if @flags[:html] && method != :email
+      end
+
+      def check_html_supported!(integration_class)
+        return unless @flags[:html]
+        return if integration_class.formats.include?(:html)
+
+        raise Error, "#{integration_class.integration_key} can't send HTML email"
+      end
+
+      def message_format = @flags[:html] ? :html : :text
 
       def pick_delivery_method
         @prompter.choose("Delivery method:", %w[email sms]).to_sym
@@ -104,7 +143,12 @@ module Messengerr
       end
 
       def collect_message(method)
-        message = @prompter.ask("Message (use {{column}} placeholders):")
+        message = @file_message
+        if message
+          @prompter.say("Message: #{message.lines.length} line(s) from #{@flags[:html] || @flags[:message_file]}")
+        else
+          message = @prompter.ask("Message (use {{column}} placeholders):")
+        end
         subject = ask_subject if method == :email
         [ message, subject ]
       end
@@ -170,8 +214,9 @@ module Messengerr
         deliveries = recipients.map do |recipient|
           Delivery.new(
             recipient:,
-            body: Renderer.render(message, recipient.row, mapping),
-            subject: subject && Renderer.render(subject, recipient.row, mapping)
+            body: Renderer.render(message, recipient.row, mapping, escape: message_format == :html),
+            subject: subject && Renderer.render(subject, recipient.row, mapping),
+            format: message_format
           )
         rescue RenderError => e
           @prompter.say("row #{recipient.row_number}: #{e.message}")
@@ -185,15 +230,37 @@ module Messengerr
         deliveries.first(3).each do |d|
           @prompter.say("To: #{d.recipient.contact}")
           @prompter.say("Subject: #{d.subject}") if d.subject
-          @prompter.say("Body: #{d.body}")
+          say_body(d)
           @prompter.say("   (#{sms_segments(d.body)} SMS segment(s))") if method == :sms
           @prompter.say("...")
         end
+        write_html_preview(deliveries.first) if message_format == :html
 
         return deliveries if @flags[:dry_run] || @prompter.confirm("Send #{deliveries.length} message(s)?")
 
         @prompter.say("Aborted — nothing was sent.")
         nil
+      end
+
+      # Multi-line text is indented under "Body:"; HTML is never dumped to the terminal.
+      def say_body(delivery)
+        if delivery.html?
+          @prompter.say("Body: HTML, #{delivery.body.length} characters")
+        elsif delivery.body.include?("\n")
+          @prompter.say("Body:")
+          delivery.body.each_line { |line| @prompter.say("  #{line.chomp}") }
+        else
+          @prompter.say("Body: #{delivery.body}")
+        end
+      end
+
+      # Lets the user open the first rendered message in a browser before confirming.
+      def write_html_preview(delivery)
+        path = File.join(Dir.pwd, "messengerr-preview.html")
+        File.write(path, delivery.body, mode: "w", perm: 0o600)
+        @prompter.say("HTML preview of the first message: #{path}")
+      rescue SystemCallError => e
+        @prompter.say("(could not write the HTML preview: #{e.message})")
       end
 
       def resume_filter(deliveries)

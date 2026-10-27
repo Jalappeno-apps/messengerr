@@ -49,6 +49,7 @@ Body: Hi Ann, your Pro invoice is ready.
 
 - **Preview first.** You see the count and the first rendered messages, then confirm. `--dry-run` sends nothing.
 - **Bad data is surfaced, not sent.** Invalid contacts are listed by row. A malformed or empty placeholder aborts the run instead of going out as literal text.
+- **See the real thing.** HTML emails (`--html letter.html`) are written to a preview file you can open in a browser before you confirm. Values from the CSV are HTML-escaped.
 - **A record of every result.** Each outcome is appended to a ledger as it happens, so a crash or Ctrl-C never loses track of who was messaged.
 - **Resume without guessing.** `--resume` skips recipients already sent. Failures that might already have been delivered are marked *uncertain* and flagged before you retry.
 
@@ -63,7 +64,7 @@ New providers follow a small contract. See [Writing an integration](https://jala
 
 ## Good to know
 
-messengerr sends plain-text, single-line messages and does not track delivery. It adds no unsubscribe links and does not check consent: laws such as CAN-SPAM, GDPR/PECR and the TCPA are the sender's responsibility. Credentials are stored in an encrypted file under `~/.config/messengerr`, with the key beside it by default, and `gem uninstall` does not remove them. Read [Limitations](https://jalappeno-apps.github.io/messengerr/limitations.html) and [Credentials](https://jalappeno-apps.github.io/messengerr/credentials.html) before a large send.
+messengerr sends plain-text messages (typed as one line, or multi-line from a file) and HTML email from a file, with no attachments, and does not track delivery. It adds no unsubscribe links and does not check consent: laws such as CAN-SPAM, GDPR/PECR and the TCPA are the sender's responsibility. Credentials are stored in an encrypted file under `~/.config/messengerr`, with the key beside it by default, and `gem uninstall` does not remove them. Read [Limitations](https://jalappeno-apps.github.io/messengerr/limitations.html) and [Credentials](https://jalappeno-apps.github.io/messengerr/credentials.html) before a large send.
 
 ## Contributing
 
