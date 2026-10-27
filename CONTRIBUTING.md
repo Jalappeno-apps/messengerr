@@ -14,6 +14,8 @@ bundle exec rspec
 bundle exec rubocop
 ```
 
+`Gemfile.lock` is deliberately not committed (it is gitignored): CI runs Ruby 3.2, 3.3 and 3.4, and a lockfile resolved on one Ruby can pin gems the others cannot install. Please don't add it back.
+
 The specs use WebMock and temporary directories: they make no real network calls and never touch your real `~/.config/messengerr`.
 
 ## Making a change

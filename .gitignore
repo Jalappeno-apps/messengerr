@@ -14,3 +14,6 @@
 # local trial files (real addresses, never commit)
 /trial/
 /messengerr-preview.html
+
+# gems do not commit a lockfile: each Ruby in the CI matrix (3.2, 3.3, 3.4) must resolve its own versions
+/Gemfile.lock
