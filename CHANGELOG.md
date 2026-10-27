@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-10-27)
 
 First release. messengerr sends templated email and SMS to a CSV contact list from an interactive command line.
 
