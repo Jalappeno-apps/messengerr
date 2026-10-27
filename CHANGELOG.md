@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-10-27)
 
 Scriptable sends, and a safety net so only a person at a terminal can send for real.
 
