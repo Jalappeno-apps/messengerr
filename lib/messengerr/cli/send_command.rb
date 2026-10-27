@@ -28,17 +28,19 @@ module Messengerr
           @prompter.say(@parser.help)
           return 0
         end
+        guard_interactive!
         check_resume_ledger!
         @file_message = load_message_file
 
         method = pick_delivery_method
         check_html_method!(method)
+        check_subject_method!(method)
         integration_class = pick_integration(method) or return 1
         check_html_supported!(integration_class)
         message, subject = collect_message(method)
         source = load_csv or return 1
-        mapping = map_placeholders(message, subject, source)
-        contact_column = pick_contact_column(method, source)
+        mapping = map_placeholders(message, subject, source) or return 1
+        contact_column = pick_contact_column(method, source) or return 1
         outcome = validate_recipients(source, contact_column, method) or return 1
         deliveries = preview_and_confirm(outcome[:valid], message, subject, mapping, method) or return 1
 
@@ -54,6 +56,7 @@ module Messengerr
         extra = @parser.parse(args)
         raise Error, "unexpected argument: #{extra.join(' ')} (see `messengerr send --help`)" unless extra.empty?
         raise Error, "use either --html or --message-file, not both (see `messengerr send --help`)" if @flags[:html] && @flags[:message_file]
+        raise Error, "use either --message or --message-file/--html, not both" if @flags[:message] && (@flags[:message_file] || @flags[:html])
       rescue OptionParser::ParseError => e
         raise Error, "#{e.message} (see `messengerr send --help`)"
       end
@@ -61,7 +64,19 @@ module Messengerr
       def build_parser
         OptionParser.new do |opts|
           opts.banner = "Usage: messengerr send [flags]"
+          opts.on("--method METHOD", %w[email sms], "Delivery method (skips the chooser)") { |v| @flags[:method] = v.to_sym }
+          opts.on("--integration NAME", "Integration to use (e.g. postmark, clicksend)") { |v| @flags[:integration] = present("--integration", v) }
           opts.on("--dry-run", "Preview the rendered messages; send nothing") { @flags[:dry_run] = true }
+          opts.on("--csv PATH", "Contact CSV (skips the path prompt)") { |v| @flags[:csv] = present("--csv", v) }
+          opts.on("--contact COLUMN", "Column holding the email/phone contact value") { |v| @flags[:contact] = present("--contact", v) }
+          opts.on("--map PLACEHOLDER=COLUMN", "Map a {{placeholder}} to a CSV column (repeatable)") do |v|
+            key, column = v.split("=", 2)
+            raise OptionParser::InvalidArgument, "#{v} (expected PLACEHOLDER=COLUMN)" if key.nil? || column.nil? || key.empty? || column.empty?
+            (@flags[:map] ||= {})[key] = column
+          end
+          opts.on("--message TEXT", "Message body as a literal argument") { |v| @flags[:message] = present("--message", v) }
+          opts.on("--subject TEXT", "Email subject line ({{placeholders}} allowed)") { |v| @flags[:subject] = present("--subject", v) }
+          opts.on("--allow-non-interactive", "Send without an interactive terminal (human scripts only)") { @flags[:allow_non_interactive] = true }
           opts.on("--resume LEDGER", "Skip recipients already sent in this ledger (row + contact)") do |v|
             @flags[:resume] = v
             @flags[:ledger] = v
@@ -76,10 +91,28 @@ module Messengerr
         end
       end
 
+      # A blank value is almost always a mistake (an empty shell variable), and
+      # for --message it would mean sending an empty message.
+      def present(flag, value)
+        raise Error, "#{flag} can't be blank (see `messengerr send --help`)" if value.strip.empty?
+
+        value
+      end
+
       def positive(value)
         raise OptionParser::InvalidArgument, "#{value} (must be a positive integer)" unless value.positive?
 
         value
+      end
+
+      # Real sends are for humans at terminals. An agent shell or CI hitting
+      # this path gets a clear refusal; the documented escape hatch exists for
+      # the user's own scripts only.
+      def guard_interactive!
+        return if @flags[:dry_run] || @flags[:allow_non_interactive] || @prompter.interactive?
+
+        raise Error, "refusing to send without an interactive terminal: run `messengerr send` yourself in a terminal " \
+                     "(or pass --allow-non-interactive in your own scripts). --dry-run works anywhere."
       end
 
       # A mistyped --resume path must not silently mean "nothing sent yet".
@@ -114,6 +147,10 @@ module Messengerr
         raise Error, "--html is only for email; SMS messages are plain text (use --message-file)" if @flags[:html] && method != :email
       end
 
+      def check_subject_method!(method)
+        raise Error, "--subject is only for email; SMS messages have no subject" if @flags[:subject] && method != :email
+      end
+
       def check_html_supported!(integration_class)
         return unless @flags[:html]
         return if integration_class.formats.include?(:html)
@@ -124,7 +161,7 @@ module Messengerr
       def message_format = @flags[:html] ? :html : :text
 
       def pick_delivery_method
-        @prompter.choose("Delivery method:", %w[email sms]).to_sym
+        @flags[:method] || @prompter.choose("Delivery method:", %w[email sms]).to_sym
       end
 
       def pick_integration(method)
@@ -135,6 +172,17 @@ module Messengerr
           return nil
         end
 
+        if @flags[:integration]
+          wanted = @flags[:integration].to_sym
+          match = integrations.find { |i| i.integration_key == wanted }
+          unless match
+            @prompter.say("Integration '#{wanted}' is not configured for #{method}. " \
+                          "Configured: #{integrations.map(&:integration_key).join(', ')}")
+            return nil
+          end
+          return match
+        end
+
         return integrations.first if integrations.length == 1
 
         keys = integrations.map(&:integration_key)
@@ -143,13 +191,13 @@ module Messengerr
       end
 
       def collect_message(method)
-        message = @file_message
-        if message
+        message = @file_message || @flags[:message]
+        if @file_message
           @prompter.say("Message: #{message.lines.length} line(s) from #{@flags[:html] || @flags[:message_file]}")
-        else
+        elsif message.nil?
           message = @prompter.ask("Message (use {{column}} placeholders):")
         end
-        subject = ask_subject if method == :email
+        subject = @flags[:subject] || (ask_subject if method == :email)
         [ message, subject ]
       end
 
@@ -164,7 +212,7 @@ module Messengerr
       end
 
       def load_csv
-        path = @prompter.ask("Path to CSV file:")
+        path = @flags[:csv] || @prompter.ask("Path to CSV file:")
         source = CsvSource.from(path)
         @prompter.say("Columns: #{source.headers.join(', ')}")
         source
@@ -176,15 +224,31 @@ module Messengerr
       # Placeholders in the subject are mapped just like body placeholders.
       def map_placeholders(message, subject, source)
         placeholders = Placeholder.extract(message) + Placeholder.extract(subject)
+        flag_map = @flags[:map] || {}
+        flag_map.each_key do |placeholder|
+          unless source.headers.include?(flag_map[placeholder])
+            @prompter.say("--map #{placeholder}=#{flag_map[placeholder]}: no such column in the CSV.")
+            return nil
+          end
+        end
+        unused = flag_map.keys - placeholders
+        unless unused.empty?
+          @prompter.say("Note: --map #{unused.join(', ')} not used: no such {{placeholder}} in the message or subject.")
+        end
         placeholders.uniq.to_h do |placeholder|
-          column = @prompter.choose("Map {{#{placeholder}}} to column:", source.headers)
+          column = flag_map[placeholder] || @prompter.choose("Map {{#{placeholder}}} to column:", source.headers)
           [ placeholder, column ]
         end
       end
 
       def pick_contact_column(method, source)
         label = { email: "email address", sms: "phone number" }[method]
-        @prompter.choose("Which column holds the #{label}?", source.headers)
+        column = @flags[:contact] || @prompter.choose("Which column holds the #{label}?", source.headers)
+        unless source.headers.include?(column)
+          @prompter.say("--contact #{column}: no such column in the CSV.")
+          return nil
+        end
+        column
       end
 
       def validate_recipients(source, contact_column, method)

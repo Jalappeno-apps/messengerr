@@ -3,10 +3,15 @@ require "io/console"
 module Messengerr
   # Injectable stdin/stdout interaction so CLI flows are scriptable and testable.
   class Prompter
-    def initialize(input: $stdin, output: $stdout)
+    def initialize(input: $stdin, output: $stdout, interactive: nil)
       @input = input
       @output = output
+      @interactive = interactive.nil? ? (@input.respond_to?(:tty?) && @input.tty?) : interactive
     end
+
+    # Real sends require a human at a terminal; anything else (pipes, agent
+    # shells) is non-interactive. Specs inject the value.
+    def interactive? = @interactive
 
     def say(message)
       @output.puts(message)

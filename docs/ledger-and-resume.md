@@ -61,7 +61,7 @@ Uncertain failures are labelled in the failure list and in the ledger (`"uncerta
 messengerr send --resume messengerr-ledger-20261027-091500.jsonl
 ```
 
-Run the wizard again with the **same CSV**. messengerr skips every recipient the ledger already records as `sent`, tells you how many it skipped (`Resuming: 40 already sent, 60 remaining.`), shows the preview for the rest, and asks for confirmation as usual. New results are appended to the same ledger.
+Run the same command again with the **same CSV** (the wizard, or the same flags plus `--resume`; a real send still needs a terminal). messengerr skips every recipient the ledger already records as `sent`, tells you how many it skipped (`Resuming: 40 already sent, 60 remaining.`), shows the preview for the rest, and asks for confirmation as usual. New results are appended to the same ledger.
 
 How recipients are matched:
 

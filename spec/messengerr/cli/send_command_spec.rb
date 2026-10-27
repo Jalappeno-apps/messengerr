@@ -19,7 +19,7 @@ RSpec.describe Messengerr::CLI::SendCommand do
   def run_wizard(script, args = [])
     input = StringIO.new(script)
     output = StringIO.new
-    prompter = Messengerr::Prompter.new(input:, output:)
+    prompter = Messengerr::Prompter.new(input:, output:, interactive: true)
     command = described_class.new(prompter:, credentials: @credentials)
     [ command.run([ "--ledger", @ledger, *args ]), output.string ]
   end
@@ -289,7 +289,7 @@ RSpec.describe Messengerr::CLI::SendCommand do
     # Runs the command, returning [error_or_nil, output] so we can also see what was printed before it failed.
     def attempt(args, script = "")
       output = StringIO.new
-      prompter = Messengerr::Prompter.new(input: StringIO.new(script), output:)
+      prompter = Messengerr::Prompter.new(input: StringIO.new(script), output:, interactive: true)
       command = described_class.new(prompter:, credentials: @credentials)
       error = begin
         command.run([ "--ledger", @ledger, *args ])

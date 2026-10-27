@@ -39,4 +39,33 @@ RSpec.describe Messengerr::Prompter do
     prompter.say("hi")
     expect(output.string).to eq("hi\n")
   end
+
+  describe "#interactive?" do
+    it "is false for a pipe or StringIO (an agent shell, CI, piped answers)" do
+      expect(described_class.new(input: StringIO.new("y\n"), output: StringIO.new)).not_to be_interactive
+    end
+
+    it "is true when standard input is a real terminal" do
+      require "pty"
+      master, slave = PTY.open
+      begin
+        expect(described_class.new(input: slave, output: StringIO.new)).to be_interactive
+      ensure
+        master.close
+        slave.close
+      end
+    end
+
+    it "can be set explicitly, which specs use to model a human at a terminal" do
+      expect(described_class.new(input: StringIO.new, output: StringIO.new, interactive: true)).to be_interactive
+      expect(described_class.new(input: StringIO.new, output: StringIO.new, interactive: false)).not_to be_interactive
+    end
+
+    it "treats an input without #tty? as non-interactive" do
+      stub = Object.new
+      stub.define_singleton_method(:gets) { nil }
+
+      expect(described_class.new(input: stub, output: StringIO.new)).not_to be_interactive
+    end
+  end
 end

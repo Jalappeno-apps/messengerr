@@ -30,7 +30,8 @@ messengerr is young. These are the things worth knowing before a large send.
 - **"Sent" means accepted, not delivered.** messengerr records that the provider accepted the message. It does not track delivery, bounces or opens.
 - **`--rate-limit` counts batches, not messages.** Postmark messages are sent one at a time inside a batch, so with defaults the speed is set by the network. To slow down, shrink the batch: `--batch-size 1 --rate-limit 5` sends about five messages a second.
 - **The CSV is read fully into memory.** Very large files (hundreds of thousands of rows) need memory to match.
-- **Interactive only.** There is no non-interactive mode or config file. Piping answers on standard input works but is not a supported interface.
+- **A real send needs a terminal.** Without one (a pipe, CI, an automated shell) a send is refused unless you pass `--allow-non-interactive`. Previews (`--dry-run`) work anywhere. The check is a safety net for accidents: it tests whether standard input is a terminal, and a program can fake one, so it is not a security boundary.
+- **No config file.** Flags answer the wizard's questions, but there is no file to store a send's settings. Keep the command in a script.
 - **Sending options.** Provider options such as Postmark's `message_stream`, `tag` and `track_opens`, and ClickSend's `schedule`, exist in the library but cannot be set from the command line yet.
 
 ## Resume

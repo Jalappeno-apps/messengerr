@@ -27,6 +27,15 @@ messengerr send --dry-run               # walk the wizard and preview, sending n
 messengerr send                         # preview, confirm, send
 ```
 
+Every wizard question also has a flag, so a send can be one command. Preview it anywhere with `--dry-run`, then run the same command without it in a terminal:
+
+```sh
+messengerr send --method email --csv contacts.csv --contact email --map name=name \
+  --message "Hi {{name}}, your invoice is ready." --subject "Invoice for {{name}}" --dry-run
+```
+
+A real send is refused unless a person is at a terminal (so an automated shell can prepare and preview, but not send).
+
 Given a CSV like
 
 ```text
