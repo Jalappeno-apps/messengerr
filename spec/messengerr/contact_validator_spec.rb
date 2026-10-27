@@ -32,4 +32,13 @@ RSpec.describe Messengerr::ContactValidator do
     expect { described_class.validate(rows, "email", :fax) }
       .to raise_error(Messengerr::Error, /unknown delivery method/)
   end
+
+  it "keeps repeated contacts: one row is one message" do
+    rows = [{ "e" => "a@x.com" }, { "e" => "A@x.com" }, { "e" => " a@x.com " }]
+    outcome = described_class.validate(rows, "e", :email)
+
+    expect(outcome[:valid].map(&:contact)).to eq(%w[a@x.com a@x.com a@x.com])
+    expect(outcome[:valid].map(&:row_number)).to eq([2, 3, 4])
+    expect(outcome[:defects]).to be_empty
+  end
 end

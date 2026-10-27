@@ -17,7 +17,7 @@ module Messengerr
 
       # The integration class this setup belongs to — inferred by convention.
       def self.integration_class
-        Messengerr::Integrations.const_get(name.split("::").last)
+        Messengerr::Integrations.const_get(name.split("::").last, false)
       end
 
       def initialize(integration_class: self.class.integration_class,

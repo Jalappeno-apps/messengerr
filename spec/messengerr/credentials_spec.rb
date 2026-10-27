@@ -82,4 +82,81 @@ RSpec.describe Messengerr::Credentials do
     expect { credentials.read(:postmark) }
       .to raise_error(Messengerr::CredentialsError)
   end
+
+  describe "MESSENGERR_MASTER_KEY (N8)" do
+    let(:good_key) { "ab" * 32 }
+
+    it "uses a valid env key and never writes a key file" do
+      with_env("MESSENGERR_MASTER_KEY" => good_key) do
+        credentials.write(:postmark, { server_token: "abc" })
+        expect(described_class.new(credentials_path:, key_path:).read(:postmark)).to eq("server_token" => "abc")
+        expect(File.exist?(key_path)).to be(false)
+      end
+    end
+
+    it "accepts surrounding whitespace and uppercase hex" do
+      with_env("MESSENGERR_MASTER_KEY" => "  #{good_key.upcase}\n") do
+        credentials.write(:postmark, { server_token: "abc" })
+        expect(credentials.read(:postmark)).to eq("server_token" => "abc")
+      end
+    end
+
+    it "rejects malformed keys with a clear CredentialsError (not a raw ArgumentError)" do
+      ["abc", "zz" * 32, "ab" * 31, "ab" * 33].each do |bad|
+        with_env("MESSENGERR_MASTER_KEY" => bad) do
+          expect { credentials.write(:postmark, { server_token: "abc" }) }
+            .to raise_error(Messengerr::CredentialsError, /64 hex characters/), "expected #{bad.length}-char key to be rejected"
+        end
+      end
+    end
+
+    it "rejects an empty key rather than silently falling back to a key file" do
+      ["", "  "].each do |blank|
+        with_env("MESSENGERR_MASTER_KEY" => blank) do
+          expect { credentials.write(:postmark, { server_token: "abc" }) }
+            .to raise_error(Messengerr::CredentialsError, /set but empty/)
+          expect(File.exist?(key_path)).to be(false)
+        end
+      end
+    end
+
+    it "does not echo the rejected value" do
+      with_env("MESSENGERR_MASTER_KEY" => "not-hex-secret-value") do
+        expect { credentials.read(:postmark) }.not_to raise_error # nothing stored yet, so no key needed
+        expect { credentials.write(:postmark, { a: "b" }) }
+          .to raise_error(Messengerr::CredentialsError) { |e| expect(e.message).not_to include("not-hex-secret-value") }
+      end
+    end
+
+    it "reports a wrong (but valid) env key as undecryptable" do
+      with_env("MESSENGERR_MASTER_KEY" => good_key) { credentials.write(:postmark, { server_token: "abc" }) }
+      with_env("MESSENGERR_MASTER_KEY" => "cd" * 32) do
+        expect { credentials.read(:postmark) }.to raise_error(Messengerr::CredentialsError, /could not be decrypted/)
+      end
+    end
+  end
+
+  describe "directory permissions (N10)" do
+    around { |example| with_env("MESSENGERR_MASTER_KEY" => nil) { example.run } }
+
+    it "creates a missing config directory owner-only" do
+      credentials.write(:postmark, { server_token: "abc" })
+      expect(File.stat(File.dirname(credentials_path)).mode & 0o777).to eq(0o700)
+    end
+
+    it "never changes the permissions of a directory that already exists" do
+      shared = File.join(@dir, "shared")
+      Dir.mkdir(shared)
+      File.chmod(0o755, shared)
+      shared_creds = described_class.new(
+        credentials_path: File.join(shared, "credentials.yml.enc"), key_path: File.join(shared, "master.key")
+      )
+
+      shared_creds.write(:postmark, { server_token: "abc" })
+
+      expect(File.stat(shared).mode & 0o777).to eq(0o755)
+      expect(File.stat(File.join(shared, "credentials.yml.enc")).mode & 0o777).to eq(0o600)
+      expect(File.stat(File.join(shared, "master.key")).mode & 0o777).to eq(0o600)
+    end
+  end
 end

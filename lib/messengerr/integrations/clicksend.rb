@@ -13,10 +13,10 @@ module Messengerr
         :sms
       end
 
-      def send_batch(pairs, options)
+      def send_batch(deliveries, options)
         body = {
-          messages: pairs.map { |recipient, message|
-            { to: recipient.contact, body: message }.tap do |m|
+          messages: deliveries.map { |delivery|
+            { to: delivery.recipient.contact, body: delivery.body }.tap do |m|
               m[:from] = options.from || @credentials["from"] if options.from || @credentials["from"]
               m[:schedule] = options.schedule if options.schedule
             end
@@ -24,17 +24,19 @@ module Messengerr
         }
         response = post("/sms/send", body)
         results = response.dig("data", "messages") || []
-        pairs.each_with_index.map do |(recipient, _), index|
+        deliveries.each_with_index.map do |delivery, index|
           entry = results[index]
           if entry && %w[SUCCESS QUEUED].include?(entry["status"])
-            Result.new(recipient:, status: :sent, provider_id: entry["message_id"])
+            Result.new(recipient: delivery.recipient, status: :sent, provider_id: entry["message_id"])
           else
-            Result.new(recipient:, status: :failed,
-                       reason: entry ? entry["status"] : "no status returned")
+            Result.new(recipient: delivery.recipient, status: :failed,
+                       reason: entry ? entry["status"] : "no status returned",
+                       uncertain: entry.nil?)
           end
         end
       rescue IntegrationError => e
-        pairs.map { |recipient, _| Result.new(recipient:, status: :failed, reason: e.message) }
+        uncertain = e.is_a?(UncertainError)
+        deliveries.map { |d| Result.new(recipient: d.recipient, status: :failed, reason: e.message, uncertain:) }
       end
 
       def verify!
@@ -42,7 +44,9 @@ module Messengerr
         raise IntegrationError, "ClickSend verification failed (#{response.code})" unless response.is_a?(Net::HTTPSuccess)
 
         true
-      rescue Errno::ECONNREFUSED, SocketError, Net::OpenTimeout, Net::ReadTimeout => e
+      rescue IntegrationError
+        raise
+      rescue StandardError => e
         raise IntegrationError, "ClickSend unreachable: #{e.message}"
       end
 
@@ -50,9 +54,16 @@ module Messengerr
 
       def post(path, payload)
         response = request(:post, path, payload)
-        raise IntegrationError, "ClickSend rejected the request (#{response.code}): #{response.body[0, 200]}" unless response.is_a?(Net::HTTPSuccess)
+        unless response.is_a?(Net::HTTPSuccess)
+          # 4xx = definitively rejected. 5xx (incl. gateway 502/504) can happen
+          # after the batch was queued, so the outcome is unknown.
+          error = response.code.to_i >= 500 ? UncertainError : IntegrationError
+          raise error, "ClickSend rejected the request (#{response.code}): #{response.body.to_s[0, 200]}"
+        end
 
         JSON.parse(response.body)
+      rescue JSON::ParserError
+        raise UncertainError, "ClickSend returned an unreadable response (#{response.code}) — status unknown"
       end
 
       def request(verb, path, payload = nil)
@@ -69,6 +80,12 @@ module Messengerr
           request.body = JSON.dump(payload)
         end
         http.request(request)
+      rescue Net::OpenTimeout, Errno::ECONNREFUSED, SocketError, OpenSSL::SSL::SSLError => e
+        # Failed before the request reached ClickSend: definitely not sent.
+        raise IntegrationError, "ClickSend unreachable: #{e.message}"
+      rescue Net::ReadTimeout, Net::WriteTimeout, Errno::ECONNRESET, Errno::EPIPE, EOFError => e
+        # The request may have been processed before the connection died.
+        raise UncertainError, "ClickSend connection lost mid-request (status unknown): #{e.message}"
       end
     end
   end

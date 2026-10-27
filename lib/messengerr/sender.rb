@@ -1,46 +1,100 @@
 module Messengerr
-  # Renders the message per recipient and dispatches batches through an
-  # integration, honoring batch_size and rate_limit. Render failures and
-  # batch send failures become failed Results — sending always continues.
+  # Dispatches Deliveries through an integration in batch_size slices,
+  # throttled by rate_limit. Every delivery produces exactly one Result:
+  # exceptions become failed Results, and integrations that return too few
+  # results get the gaps filled rather than silently losing contacts.
+  #
+  # Integrations that send one message at a time may yield each Result from
+  # send_batch as it lands; the Sender records those to the ledger immediately,
+  # so a crash or Ctrl-C mid-batch never loses what was already delivered.
   class Sender
-    def initialize(integration, options: integration.class.options_class.new)
+    # Why the run stopped early, if it did (currently: the ledger became
+    # unwritable, so no further batch is sent without a record).
+    attr_reader :halted_reason
+
+    def initialize(integration, options: integration.class.options_class.new, ledger: nil)
       @integration = integration
       @options = options
       @options.validate!
+      @ledger = ledger
+      @recorded = {}
+      @halted_reason = nil
     end
 
-    # → [Result] in recipient order of appearance per group.
-    def send(recipients, template, mapping)
-      pairs, failures = prepare(recipients, template, mapping)
-
-      results = failures
-      pairs.each_slice(@options.batch_size).with_index do |slice, index|
-        throttle if index.positive?
-        results.concat(dispatch(slice))
+    # deliveries → [Result], one per delivery, in slice order.
+    def deliver(deliveries)
+      deliveries.each_slice(@options.batch_size).with_index.flat_map do |slice, index|
+        throttle if index.positive? && !@halted_reason
+        @halted_reason ? halted_results(slice) : dispatch(slice)
       end
-      results
     end
 
     private
 
-    # → [[recipient, rendered_message], ...] + failed Results for unrenderable rows.
-    def prepare(recipients, template, mapping)
-      prepared = []
-      failures = []
+    def dispatch(slice)
+      @recorded = {} # dedupe is per batch: a retry must be recorded again
+      seen = {}
+      results =
+        begin
+          returned = @integration.send_batch(slice, @options) do |result|
+            seen[key(result.recipient)] = result
+            record(result)
+          end
+          reconcile(slice, returned, seen)
+        rescue Interrupt
+          # Whatever hadn't reported back may or may not have gone out.
+          slice.each { |d| record(seen[key(d.recipient)] || failure(d, "interrupted", uncertain: true)) }
+          raise
+        rescue StandardError => e
+          failure_results(slice, seen, e)
+        end
 
-      recipients.each do |recipient|
-        prepared << [recipient, Renderer.render(template, recipient.row, mapping)]
-      rescue RenderError => e
-        failures << Result.new(recipient:, status: :failed, reason: e.message)
-      end
-
-      [prepared, failures]
+      results.each { |r| record(r) }
+      results
     end
 
-    def dispatch(slice)
-      @integration.send_batch(slice, @options)
-    rescue IntegrationError => e
-      slice.map { |recipient, _| Result.new(recipient:, status: :failed, reason: e.message) }
+    # One Result per delivery. Results the integration yielded survive an
+    # exception raised later in the same batch.
+    def failure_results(slice, seen, error)
+      # A plain IntegrationError means the provider definitely rejected it;
+      # anything else (timeouts, UncertainError, bugs) may have gone out.
+      uncertain = !(error.is_a?(IntegrationError) && !error.is_a?(UncertainError))
+      slice.map { |d| seen[key(d.recipient)] || failure(d, error.message, uncertain:) }
+    end
+
+    # The contract: one Result per delivery. Gaps are filled with uncertain
+    # failures rather than silently dropping contacts.
+    def reconcile(slice, returned, seen)
+      by_recipient = Array(returned).group_by { |r| key(r.recipient) }
+      slice.map do |d|
+        k = key(d.recipient)
+        by_recipient[k]&.first || seen[k] || failure(d, "integration returned no result", uncertain: true)
+      end
+    end
+
+    def failure(delivery, reason, uncertain: false)
+      Result.new(recipient: delivery.recipient, status: :failed, reason:, uncertain:)
+    end
+
+    def halted_results(slice)
+      slice.map { |d| failure(d, "not sent — #{@halted_reason}") }
+    end
+
+    def record(result)
+      return unless @ledger
+
+      k = key(result.recipient)
+      return if @recorded[k]
+
+      @ledger.record(result)
+      @recorded[k] = true
+    rescue SystemCallError, IOError => e
+      # Never crash after a send: keep the in-memory result, stop sending more.
+      @halted_reason ||= "ledger write failed (#{e.message}); stopped so no message goes unrecorded"
+    end
+
+    def key(recipient)
+      [recipient.row_number, recipient.contact]
     end
 
     def throttle

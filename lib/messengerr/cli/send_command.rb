@@ -1,28 +1,86 @@
+require "optparse"
+require "set"
+
 module Messengerr
   class CLI
-    # messengerr send — interactive wizard:
+    # messengerr send [flags] — interactive wizard:
     #   delivery method → configured integration → message (with {{placeholders}})
     #   → CSV path → map placeholders to columns → contact column → validate
-    #   (abort or drop defects) → send → failures listed → retry failed only.
+    #   (abort or drop defects) → preview → confirm → send → failures listed
+    #   → retry failed only.
+    #
+    # Flags: --dry-run, --resume LEDGER, --ledger PATH, --batch-size N,
+    #        --rate-limit N, --from ADDRESS
     class SendCommand
+      SMS_SEGMENT = 160
+
       def initialize(prompter:, credentials:)
         @prompter = prompter
         @credentials = credentials
+        @flags = { ledger: Ledger.default_path }
       end
 
-      def run
+      def run(args = [])
+        parse_flags(args)
+        if @flags[:help]
+          @prompter.say(@parser.help)
+          return 0
+        end
+        check_resume_ledger!
+
         method = pick_delivery_method
         integration_class = pick_integration(method) or return 1
         message, subject = collect_message(method)
         source = load_csv or return 1
-        mapping = map_placeholders(message, source)
+        mapping = map_placeholders(message, subject, source)
         contact_column = pick_contact_column(method, source)
         outcome = validate_recipients(source, contact_column, method) or return 1
+        deliveries = preview_and_confirm(outcome[:valid], message, subject, mapping, method) or return 1
 
-        send_and_report(integration_class, outcome, message, subject, mapping)
+        send_and_report(integration_class, deliveries, outcome[:defects])
       end
 
       private
+
+      # Bad flags are user errors, not crashes: they surface as Messengerr::Error
+      # (printed as "messengerr: ..." with exit 1) before any prompt appears.
+      def parse_flags(args)
+        @parser = build_parser
+        extra = @parser.parse(args)
+        raise Error, "unexpected argument: #{extra.join(' ')} (see `messengerr send --help`)" unless extra.empty?
+      rescue OptionParser::ParseError => e
+        raise Error, "#{e.message} (see `messengerr send --help`)"
+      end
+
+      def build_parser
+        OptionParser.new do |opts|
+          opts.banner = "Usage: messengerr send [flags]"
+          opts.on("--dry-run", "Preview the rendered messages; send nothing") { @flags[:dry_run] = true }
+          opts.on("--resume LEDGER", "Skip recipients already sent in this ledger (row + contact)") do |v|
+            @flags[:resume] = v
+            @flags[:ledger] = v
+          end
+          opts.on("--ledger PATH", "Where to record results (default: ./messengerr-ledger-<time>.jsonl)") { |v| @flags[:ledger] = v }
+          opts.on("--batch-size N", Integer, "Messages per batch") { |v| @flags[:batch_size] = positive(v) }
+          opts.on("--rate-limit N", Integer, "Batches per second") { |v| @flags[:rate_limit] = positive(v) }
+          opts.on("--from ADDRESS", "Override the sender address/ID") { |v| @flags[:from] = v }
+          opts.on("-h", "--help", "Show this help") { @flags[:help] = true }
+        end
+      end
+
+      def positive(value)
+        raise OptionParser::InvalidArgument, "#{value} (must be a positive integer)" unless value.positive?
+
+        value
+      end
+
+      # A mistyped --resume path must not silently mean "nothing sent yet".
+      def check_resume_ledger!
+        return unless @flags[:resume]
+        return if File.file?(@flags[:resume])
+
+        raise Error, "resume ledger not found: #{@flags[:resume]}"
+      end
 
       def pick_delivery_method
         @prompter.choose("Delivery method:", %w[email sms]).to_sym
@@ -45,8 +103,18 @@ module Messengerr
 
       def collect_message(method)
         message = @prompter.ask("Message (use {{column}} placeholders):")
-        subject = @prompter.ask("Subject:") if method == :email
+        subject = ask_subject if method == :email
         [message, subject]
+      end
+
+      # Email needs a subject; re-ask now rather than failing after the wizard.
+      def ask_subject
+        loop do
+          subject = @prompter.ask("Subject ({{placeholders}} allowed):")
+          return subject unless subject.strip.empty?
+
+          @prompter.say("A subject is required for email.")
+        end
       end
 
       def load_csv
@@ -59,8 +127,10 @@ module Messengerr
         nil
       end
 
-      def map_placeholders(message, source)
-        Placeholder.extract(message).to_h do |placeholder|
+      # Placeholders in the subject are mapped just like body placeholders.
+      def map_placeholders(message, subject, source)
+        placeholders = Placeholder.extract(message) + Placeholder.extract(subject)
+        placeholders.uniq.to_h do |placeholder|
           column = @prompter.choose("Map {{#{placeholder}}} to column:", source.headers)
           [placeholder, column]
         end
@@ -93,31 +163,141 @@ module Messengerr
         outcome
       end
 
-      def send_and_report(integration_class, outcome, message, subject, mapping)
-        integration = integration_class.new(@credentials.read(integration_class.integration_key))
-        options = integration_class.options_class.new
-        options.subject = subject if options.respond_to?(:subject=)
-        sender = Sender.new(integration, options:)
+      # H1 guardrail: show what will actually go out before anything is sent.
+      def preview_and_confirm(recipients, message, subject, mapping, method)
+        deliveries = recipients.map do |recipient|
+          Delivery.new(
+            recipient:,
+            body: Renderer.render(message, recipient.row, mapping),
+            subject: subject && Renderer.render(subject, recipient.row, mapping)
+          )
+        rescue RenderError => e
+          @prompter.say("row #{recipient.row_number}: #{e.message}")
+          @prompter.say("Aborted — fix the CSV or mapping and try again.")
+          return nil
+        end
 
-        results = sender.send(outcome[:valid], message, mapping)
+        deliveries = resume_filter(deliveries) or return nil
+
+        @prompter.say("--- Preview (#{deliveries.length} message#{'s' if deliveries.length != 1}) ---")
+        deliveries.first(3).each do |d|
+          @prompter.say("To: #{d.recipient.contact}")
+          @prompter.say("Subject: #{d.subject}") if d.subject
+          @prompter.say("Body: #{d.body}")
+          @prompter.say("   (#{sms_segments(d.body)} SMS segment(s))") if method == :sms
+          @prompter.say("...")
+        end
+
+        return deliveries if @flags[:dry_run] || @prompter.confirm("Send #{deliveries.length} message(s)?")
+
+        @prompter.say("Aborted — nothing was sent.")
+        nil
+      end
+
+      def resume_filter(deliveries)
+        return deliveries unless @flags[:resume]
+
+        warn_uncertain(deliveries)
+        sent = Ledger.sent_recipients(@flags[:resume]).to_set
+        skipped = deliveries.count { |d| sent.include?(recipient_key(d)) }
+        remaining = deliveries.reject { |d| sent.include?(recipient_key(d)) }
+        @prompter.say("Resuming: #{skipped} already sent, #{remaining.length} remaining.")
+        if remaining.empty?
+          @prompter.say("Nothing left to send.")
+          return nil
+        end
+        remaining
+      end
+
+      # How the ledger identifies a recipient: row + contact, so repeated
+      # contacts are tracked per row.
+      def recipient_key(delivery)
+        [delivery.recipient.row_number, delivery.recipient.contact]
+      end
+
+      # Earlier attempts that timed out etc. may have been delivered; --resume
+      # will send to them again, so say so before the confirmation.
+      def warn_uncertain(deliveries)
+        uncertain = Ledger.uncertain_recipients(@flags[:resume]).to_set
+        at_risk = deliveries.map { |d| recipient_key(d) }.select { |key| uncertain.include?(key) }.map(&:last)
+        return if at_risk.empty?
+
+        @prompter.say("Warning: #{at_risk.length} contact(s) had an earlier attempt with an unknown outcome " \
+                      "and will be sent again — they may receive duplicates:")
+        at_risk.first(10).each { |contact| @prompter.say("  #{contact}") }
+        @prompter.say("  ...and #{at_risk.length - 10} more") if at_risk.length > 10
+      end
+
+      def send_and_report(integration_class, deliveries, defects)
+        integration = integration_class.new(@credentials.read(integration_class.integration_key))
+        options = build_options(integration_class)
+        ledger = Ledger.new(@flags[:ledger])
+        sender = Sender.new(integration, options:, ledger:)
+
+        if @flags[:dry_run]
+          @prompter.say("Dry run — nothing sent. Ledger skipped.")
+          return 0
+        end
+
+        ledger.verify_writable!
+        results = deliver_all(sender, deliveries) or return 130
 
         loop do
           failures = results.reject(&:sent?)
           break if failures.empty?
 
-          @prompter.say("#{failures.length} send(s) failed:")
-          failures.each do |result|
-            @prompter.say("  row #{result.recipient.row_number} (#{result.recipient.contact}): #{result.reason}")
-          end
-          break unless @prompter.confirm("Retry failed sends?")
+          list_failures(failures)
+          break if sender.halted_reason
+          break unless retry_confirmed?(failures)
 
-          retried = sender.send(failures.map(&:recipient), message, mapping)
+          retrying = deliveries.select { |d| failures.any? { |f| f.recipient == d.recipient } }
+          retried = deliver_all(sender, retrying) or return 130
           results = results.select(&:sent?) + retried
         end
 
-        report = Report.new(results:, dropped: outcome[:defects])
+        @prompter.say("Stopped early: #{sender.halted_reason}") if sender.halted_reason
+        @prompter.say("Ledger written to #{@flags[:ledger]}")
+        report = Report.new(results:, dropped: defects)
         @prompter.say("Done — #{report.summary}")
         report.ok? ? 0 : 1
+      end
+
+      # → [Result], or nil if the user hit Ctrl-C (the ledger already holds
+      # everything that was delivered; unreported sends are marked uncertain).
+      def deliver_all(sender, deliveries)
+        sender.deliver(deliveries)
+      rescue Interrupt
+        @prompter.say("\nInterrupted. Ledger: #{@flags[:ledger]}")
+        @prompter.say("Resume later with: messengerr send --resume #{@flags[:ledger]}")
+        nil
+      end
+
+      def list_failures(failures)
+        @prompter.say("#{failures.length} send(s) failed:")
+        failures.each do |result|
+          line = "  row #{result.recipient.row_number} (#{result.recipient.contact}): #{result.reason}"
+          line += " [uncertain — may already be delivered]" if result.uncertain
+          @prompter.say(line)
+        end
+      end
+
+      def retry_confirmed?(failures)
+        if failures.any?(&:uncertain)
+          @prompter.say("Warning: some failures are uncertain — retrying may send duplicates.")
+        end
+        @prompter.confirm("Retry failed sends?")
+      end
+
+      def build_options(integration_class)
+        options = integration_class.options_class.new
+        %i[from batch_size rate_limit].each do |key|
+          options.public_send("#{key}=", @flags[key]) if @flags[key] && options.respond_to?("#{key}=")
+        end
+        options
+      end
+
+      def sms_segments(body)
+        body.length <= SMS_SEGMENT ? 1 : (body.length / 153.0).ceil
       end
     end
   end

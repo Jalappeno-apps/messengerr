@@ -10,7 +10,11 @@ Gem::Specification.new do |spec|
                        "delivery method (email, sms)."
   spec.homepage      = "https://github.com/brolinr/messengerr"
   spec.license       = "MIT"
-  spec.required_ruby_version = ">= 3.1"
+  spec.required_ruby_version = ">= 3.2"
+  spec.metadata = {
+    "source_code_uri" => "https://github.com/brolinr/messengerr",
+    "rubygems_mfa_required" => "true"
+  }
 
   spec.files = Dir["lib/**/*", "exe/*", "README.md", "LICENSE"]
   spec.bindir = "exe"
@@ -20,9 +24,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "base64", "~> 0.2"
   spec.add_dependency "csv", "~> 3.3"
   spec.add_dependency "phonelib", "~> 0.8"
+  spec.add_dependency "postmark", "~> 1.25"
   spec.add_dependency "zeitwerk", "~> 2.6"
-
-  spec.add_development_dependency "postmark", "~> 1.25"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.13"
   spec.add_development_dependency "webmock", "~> 3.23"

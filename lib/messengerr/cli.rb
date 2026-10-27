@@ -7,7 +7,7 @@ module Messengerr
 
       Commands:
         credentials  Manage integration credentials (setup|list|verify|delete)
-        send         Send a message to a CSV contact list
+        send         Send a message to a CSV contact list (see `send --help`)
         integrations List registered integrations
     TEXT
 
@@ -28,7 +28,7 @@ module Messengerr
       when "credentials"
         CLI::CredentialsCommand.new(prompter: @prompter, credentials: @credentials).run(argv[1..])
       when "send"
-        CLI::SendCommand.new(prompter: @prompter, credentials: @credentials).run
+        CLI::SendCommand.new(prompter: @prompter, credentials: @credentials).run(argv[1..])
       when "integrations"
         CLI::IntegrationsCommand.new(prompter: @prompter, credentials: @credentials).run
       when "-h", "--help", nil

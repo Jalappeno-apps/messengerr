@@ -18,6 +18,9 @@ module Messengerr
 
     def self.decrypt(payload, key)
       data = Base64.strict_decode64(payload)
+      if data.bytesize < IV_LENGTH + TAG_LENGTH + 1
+        raise CredentialsError, "credentials file is truncated or malformed"
+      end
       iv, rest = data[0, IV_LENGTH], data[IV_LENGTH..]
       ciphertext, tag = rest[0...-TAG_LENGTH], rest[-TAG_LENGTH..]
 
@@ -27,7 +30,9 @@ module Messengerr
       cipher.auth_tag = tag
       cipher.auth_data = ""
       cipher.update(ciphertext) + cipher.final
-    rescue ArgumentError, OpenSSL::Cipher::CipherError
+    rescue CredentialsError
+      raise
+    rescue StandardError
       raise CredentialsError, "credentials could not be decrypted — master key is missing or incorrect"
     end
   end

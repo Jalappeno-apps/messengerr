@@ -7,6 +7,13 @@ module Messengerr
 
     class << self
       def register(integration_class)
+        raise Error, "anonymous classes can't be registered as integrations" if integration_class.name.nil?
+
+        existing = @integrations.find { |i| i.integration_key == integration_class.integration_key }
+        if existing && existing != integration_class
+          raise Error,
+                "integration key :#{integration_class.integration_key} is already taken by #{existing.name}"
+        end
         @integrations << integration_class unless @integrations.include?(integration_class)
       end
 

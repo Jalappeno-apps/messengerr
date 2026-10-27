@@ -1,13 +1,11 @@
 module Messengerr
-  # Locations for gem-owned files. Credentials live inside the installed gem
-  # directory so they are removed when the gem is uninstalled or upgraded.
+  # Locations for messengerr-owned files. Credentials live in the user's
+  # config directory (~/.config/messengerr by default, overridable with
+  # MESSENGERR_CONFIG_DIR) so they survive gem upgrades.
   module Paths
-    def self.gem_root
-      File.expand_path("../..", __dir__)
-    end
-
     def self.config_dir
-      File.join(gem_root, "config")
+      override = ENV["MESSENGERR_CONFIG_DIR"].to_s.strip
+      override.empty? ? File.join(Dir.home, ".config", "messengerr") : override
     end
 
     def self.credentials_file

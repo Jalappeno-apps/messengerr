@@ -2,3 +2,5 @@
 /pkg/
 /config/credentials.yml.enc
 /config/master.key
+/messengerr-ledger-*.jsonl
+/AUDIT.md

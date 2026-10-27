@@ -4,7 +4,7 @@ RSpec.describe Messengerr::SendingOptions::Postmark do
     expect(options.to_h).to include(subject: "Hi", tag: "promo", message_stream: "outbound", track_opens: true)
   end
 
-  it "requires a subject" do
-    expect { described_class.new.validate! }.to raise_error(Messengerr::ValidationError, /subject/)
+  it "does not require a subject (it is supplied per delivery)" do
+    expect(described_class.new.validate!).to be(true)
   end
 end

@@ -14,11 +14,11 @@ module Messengerr
 
       # Parallel namespaces resolved by convention; override to wire explicitly.
       def self.setup_class
-        Messengerr::Setups.const_get(class_name)
+        Messengerr::Setups.const_get(class_name, false)
       end
 
       def self.options_class
-        Messengerr::SendingOptions.const_get(class_name)
+        Messengerr::SendingOptions.const_get(class_name, false)
       end
 
       def self.class_name
@@ -34,9 +34,12 @@ module Messengerr
         @credentials = credentials
       end
 
-      # Send each [recipient, rendered_message] pair.
-      # → Array of Result, one per recipient.
-      def send_batch(pairs, options)
+      # Send each Delivery (recipient + rendered body + optional subject).
+      # → Array of Result, one per delivery — exactly one per recipient.
+      # Integrations that send one by one should `yield` each Result as it lands
+      # (optional block) so the ledger survives a crash mid-batch. Mark a failure
+      # `uncertain: true` unless the provider definitely rejected it.
+      def send_batch(deliveries, options)
         raise NotImplementedError, "#{self.class.name} must implement #send_batch"
       end
 

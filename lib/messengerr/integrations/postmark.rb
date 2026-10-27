@@ -6,9 +6,9 @@ module Messengerr
         :email
       end
 
-      def send_batch(pairs, options)
-        pairs.map do |recipient, body|
-          deliver(recipient, body, options)
+      def send_batch(deliveries, options)
+        deliveries.map do |delivery|
+          deliver_one(delivery, options).tap { |result| yield result if block_given? }
         end
       end
 
@@ -23,21 +23,35 @@ module Messengerr
 
       private
 
-      def deliver(recipient, body, options)
+      def deliver_one(delivery, options)
+        subject = delivery.subject || options.subject
+        if subject.to_s.strip.empty?
+          return Result.new(recipient: delivery.recipient, status: :failed, reason: "subject is required for email sends")
+        end
+
         response = client.deliver(
           {
             from: options.from || @credentials["from"],
-            to: recipient.contact,
-            subject: options.subject,
-            text_body: body,
+            to: delivery.recipient.contact,
+            subject:,
+            text_body: delivery.body,
             message_stream: options.message_stream,
             tag: options.tag,
             track_opens: options.track_opens
           }.compact
         )
-        Result.new(recipient:, status: :sent, provider_id: response[:message_id])
+        Result.new(recipient: delivery.recipient, status: :sent, provider_id: response[:message_id])
       rescue StandardError => e
-        Result.new(recipient:, status: :failed, reason: e.message)
+        Result.new(recipient: delivery.recipient, status: :failed, reason: e.message,
+                   uncertain: !definitely_rejected?(e))
+      end
+
+      # Only a 4xx from the API proves the message was not accepted. Timeouts,
+      # connection errors, 5xx and anything unrecognised may have gone through.
+      def definitely_rejected?(error)
+        defined?(::Postmark::HttpServerError) &&
+          error.is_a?(::Postmark::HttpServerError) &&
+          (400..499).cover?(error.status_code)
       end
 
       def client

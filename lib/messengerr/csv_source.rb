@@ -6,13 +6,20 @@ module Messengerr
     attr_reader :headers, :rows
 
     def self.from(path)
-      raise Error, "CSV file not found: #{path}" unless File.exist?(path)
+      expanded = File.expand_path(path)
+      raise Error, "CSV file not found: #{path}" unless File.file?(expanded)
 
-      table = CSV.read(path, headers: true)
-      raise Error, "CSV has no header row: #{path}" if table.headers.empty? || table.headers.all?(&:nil?)
+      table = CSV.read(expanded, headers: true, encoding: "bom|utf-8")
+      headers = table.headers.compact
+      raise Error, "CSV has no header row: #{path}" if headers.empty?
+
+      duplicates = headers.tally.select { |_, count| count > 1 }.keys
+      unless duplicates.empty?
+        raise Error, "CSV has duplicate headers: #{duplicates.join(', ')}"
+      end
 
       new(headers: table.headers, rows: table.map(&:to_h))
-    rescue CSV::MalformedCSVError => e
+    rescue CSV::MalformedCSVError, Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError => e
       raise Error, "could not parse CSV #{path}: #{e.message}"
     end
 
