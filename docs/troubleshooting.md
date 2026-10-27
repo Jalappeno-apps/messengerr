@@ -109,6 +109,27 @@ Errors are printed as `messengerr: <message>` and the command exits with code `1
 **`integration returned no result`**
 : An integration did not report a recipient. The message may or may not have been sent. Treat it as uncertain.
 
+**`messengerr: refusing to send without an interactive terminal: ...`**
+: You ran a real send (no `--dry-run`) where standard input isn't a terminal: a pipe, CI, or an automated shell such as an AI assistant. Run the command yourself in a terminal window. For previews use `--dry-run`, which works anywhere. For your own scripts, `--allow-non-interactive` is the deliberate opt-out.
+
+**`messengerr: --message can't be blank`** (also `--subject`, `--csv`, `--contact`, `--integration`)
+: The flag was given but empty or only spaces, often an unset shell variable (`--message "$BODY"`). Give it a value, or remove the flag to be asked.
+
+**`--map X=Y: no such column in the CSV.`** / **`--contact X: no such column in the CSV.`**
+: The column name doesn't match a header exactly (case and spaces count). The run stops before sending. Check the `Columns:` line it printed.
+
+**`Note: --map X not used: no such {% raw %}{{placeholder}}{% endraw %} in the message or subject.`**
+: A warning, not an error. You mapped a placeholder your message doesn't contain, usually a typo (`nmae` for `name`). The real placeholder will be asked for, or fail, if it isn't mapped.
+
+**`Integration 'X' is not configured for email.`**
+: `--integration` names something that isn't configured for that delivery method. The line lists what is configured. Set it up with `messengerr credentials setup X`.
+
+**`--subject is only for email; SMS messages have no subject`**
+: Remove `--subject` for SMS sends.
+
+**`use either --message or --message-file/--html, not both`**
+: Choose one way to give the message.
+
 ## Resuming
 
 **`resume ledger not found: PATH`**

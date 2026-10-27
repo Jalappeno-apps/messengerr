@@ -100,6 +100,20 @@ Done — sent: 2, failed: 0, dropped: 1
 
 `dropped` counts the contacts you removed at the validation step.
 
+## Scripting a send
+
+Every wizard question has a flag (see the [command line reference]({{ '/command-line.html' | relative_url }})), so a whole send can be one command. Preview it first:
+
+```sh
+messengerr send --method email --csv contacts.csv --contact email \
+  --map name=name --map plan=plan \
+  --message-file letter.txt --subject "Hello, {% raw %}{{name}}{% endraw %}" --dry-run
+```
+
+This works anywhere, including a script or an automated shell. It prints the preview and sends nothing. When the preview is right, run **the same command without `--dry-run`**, in a terminal window. messengerr shows the preview again and asks you to confirm.
+
+A real send is refused when there is no terminal, so an automated shell can prepare and preview but never send. If you do want a script to send, pass `--allow-non-interactive`, and see [Limitations]({{ '/limitations.html' | relative_url }}).
+
 ## Exit codes
 
 | Code | Meaning |
