@@ -4,6 +4,7 @@ Gem::Specification.new do |spec|
   spec.name          = "messengerr"
   spec.version       = Messengerr::VERSION
   spec.authors       = [ "Daiwick" ]
+  spec.email         = [ "developers@daiwick.com" ]
   spec.summary       = "Send templated messages to CSV contact lists over email and SMS."
   spec.description   = "Interactive CLI that renders {{placeholder}} messages against a CSV " \
                        "contact list and dispatches through pluggable services scoped by " \
@@ -16,7 +17,8 @@ Gem::Specification.new do |spec|
     "source_code_uri" => "https://github.com/jalappeno-apps/messengerr",
     "bug_tracker_uri" => "https://github.com/jalappeno-apps/messengerr/issues",
     "changelog_uri" => "https://github.com/jalappeno-apps/messengerr/blob/main/CHANGELOG.md",
-    "rubygems_mfa_required" => "true"
+    "rubygems_mfa_required" => "true",
+    "allowed_push_host" => "https://rubygems.org"
   }
 
   spec.files = Dir["lib/**/*", "exe/*", "README.md", "LICENSE"]

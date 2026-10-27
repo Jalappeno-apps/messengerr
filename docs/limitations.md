@@ -21,6 +21,7 @@ messengerr is young. These are the things worth knowing before a large send.
 - **Typed messages are one line.** The message and subject you type are one line each. For a multi-line message, use `--message-file`.
 - **HTML email is HTML only.** `--html` sends an HTML body and no plain-text part, and nothing is generated for clients that prefer text. It works for email through Postmark only. See [HTML and multi-line messages]({{ '/html-email.html' | relative_url }}).
 - **No attachments, inline images, CC/BCC or reply-to.** Images in HTML must be hosted at a public address.
+- **No conditionals or logic.** Templates only insert values. `if`, loops, filters and expressions inside `{% raw %}{{ }}{% endraw %}` are not supported and abort the run. See [CSV and templates]({{ '/csv-and-templates.html' | relative_url }}).
 - **No literal `{% raw %}{{` or `}}{% endraw %}`.** Those pairs are always treated as placeholders. See [CSV and templates]({{ '/csv-and-templates.html' | relative_url }}).
 - **SMS segment counts are estimates.** The preview assumes standard 160/153-character segments. Emoji and many accented characters use shorter ones, so the real count and cost can be higher.
 

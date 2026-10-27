@@ -26,6 +26,25 @@ A placeholder is a column name in double braces: `{% raw %}{{name}}{% endraw %}`
 - The subject (email) follows the same rules as the body.
 - In an HTML message (`--html`) every substituted value is HTML-escaped, so CSV data cannot add markup. Messages can also come from a multi-line file. See [HTML and multi-line messages]({{ '/html-email.html' | relative_url }}).
 
+## Placeholders only insert a value
+
+A placeholder fills in one CSV column. There is no logic: no `if`, no loops, no filters, no expressions. This is deliberate, so the preview shows exactly the message each person gets.
+
+Anything that is not a plain placeholder is left in the message, and the run aborts with `unrenderable placeholder left in message`. Nothing is evaluated, and nothing is sent:
+
+| You write | What happens |
+|---|---|
+| `{% raw %}{{name}}{% endraw %}`, `{% raw %}{{ name }}{% endraw %}` | The value of the mapped column |
+| `{% raw %}{{#if plan}}...{{/if}}{% endraw %}` | Aborts: conditionals are not supported |
+| `{% raw %}{{ name | upcase }}{% endraw %}` | Aborts: filters are not supported |
+| `{% raw %}{{ name + plan }}{% endraw %}`, `{% raw %}{{name ? "a" : "b"}}{% endraw %}` | Aborts: expressions are not supported |
+| `{% raw %}{{> partial}}{% endraw %}` | Aborts: includes are not supported |
+
+If different people need different wording, split them into separate CSVs and run messengerr once for each.
+
+{: .note }
+Extra braces around a valid placeholder are kept literally: `{% raw %}{{{name}}}{% endraw %}` is sent as `{Alice}`. There is no "unescaped" variant of a placeholder.
+
 Because a literal `{% raw %}{{` or `}}{% endraw %}` in your text is treated as a placeholder, you cannot send those character pairs verbatim.
 
 ## The CSV file

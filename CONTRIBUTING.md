@@ -1,6 +1,6 @@
 # Contributing
 
-Bug reports and pull requests are welcome at [github.com/jalappeno-apps/messengerr](https://github.com/jalappeno-apps/messengerr).
+Bug reports and pull requests are welcome at [github.com/jalappeno-apps/messengerr](https://github.com/jalappeno-apps/messengerr). For general questions or enquiries, write to developers@daiwick.com.
 
 Read [STYLE.md](STYLE.md) first. It lists the conventions the code follows and the invariants a change must not break (never send without a preview and confirmation, one result per delivery, record results as they land, never leak a secret).
 
@@ -42,6 +42,6 @@ Then open http://127.0.0.1:4000/. Only document what you have run.
 
 ## Security
 
-Please do not open a public issue for a vulnerability. Use GitHub's private vulnerability reporting (the repository's **Security** tab, then **Report a vulnerability**).
+Please do not open a public issue for a vulnerability. See [SECURITY.md](SECURITY.md).
 
 By contributing you agree your work is released under the MIT License.

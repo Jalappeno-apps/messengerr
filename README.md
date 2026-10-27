@@ -74,4 +74,4 @@ Bug reports and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBU
 
 Released under the [MIT License](LICENSE).
 
-Maintained by [Daiwick](https://daiwick.com).
+Maintained by [Daiwick](https://daiwick.com). Questions and enquiries: developers@daiwick.com. Bugs and feature requests: [GitHub issues](https://github.com/jalappeno-apps/messengerr/issues). Security reports: see [SECURITY.md](SECURITY.md).

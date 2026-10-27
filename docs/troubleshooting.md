@@ -119,4 +119,4 @@ Errors are printed as `messengerr: <message>` and the command exits with code `1
 
 ## Still stuck?
 
-Open an issue at [github.com/jalappeno-apps/messengerr](https://github.com/jalappeno-apps/messengerr/issues) with the command you ran and the message you saw. Do not paste credentials or a ledger (it holds contact details).
+Open an issue at [github.com/jalappeno-apps/messengerr](https://github.com/jalappeno-apps/messengerr/issues) with the command you ran and the message you saw. For general enquiries, write to developers@daiwick.com. Do not paste credentials or a ledger (it holds contact details).

@@ -50,6 +50,7 @@ These are the product's promises. A change that weakens one needs a deliberate d
 
 - **Nothing is sent before the user has seen a preview and confirmed.** `--dry-run` never sends or writes a ledger.
 - **Never send unrendered text.** Any leftover `{{` or `}}` aborts the run.
+- **Templates are logic-free.** A `{{name}}` substitutes one mapped CSV column and nothing else: no conditionals, loops, filters or expressions. Anything that is not a plain placeholder is left in place and aborts the run (`unrenderable placeholder left in message`). Adding logic needs a deliberate decision, a way to preview every variation, and a docs update.
 - **One row is one message.** Contacts are not de-duplicated.
 - **CSV values are HTML-escaped in HTML mode, and HTML only reaches integrations that declare it.** `Renderer.render(..., escape: true)` for `--html`; the subject is never escaped; the CLI refuses `--html` for SMS and for integrations without `:html` in `formats`.
 - **One `Result` per `Delivery`.** `Sender` fills any gap with a failed, uncertain result.

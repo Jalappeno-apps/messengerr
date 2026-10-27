@@ -1,0 +1,71 @@
+name: Release
+
+# Publishes to RubyGems when a version tag is pushed (git tag vX.Y.Z && git push origin vX.Y.Z).
+# Uses RubyGems trusted publishing (OIDC): no API key is stored in this repository.
+# One-time setup is described in docs/contributing/releasing.md.
+
+on:
+  push:
+    tags: [ "v*" ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history, so we can tell whether the tag is on main
+      - name: Tagged commit must be on main
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $GITHUB_REF_NAME ($GITHUB_SHA) is not on main. Merge the release commit to main, then tag it."
+            exit 1
+          fi
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+      - name: Tag matches the gem version and the changelog entry is dated
+        run: bundle exec rake release:check
+      - name: Specs
+        run: bundle exec rspec
+      - name: Lint
+        run: bundle exec rubocop
+      - name: Docs reference is up to date
+        run: bundle exec rake docs:check
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Create an environment named "rubygems" in the repository settings (with required reviewers)
+    # to make a person approve every release. The name must match the one set on RubyGems.org.
+    environment: rubygems
+    permissions:
+      contents: write   # create the GitHub release
+      id-token: write   # trusted publishing to RubyGems
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      # release-gem runs `bundle exec rake release` but does not install Ruby itself.
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+      - uses: rubygems/release-gem@v1
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bundle exec rake release:notes > release-notes.md
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md --verify-tag

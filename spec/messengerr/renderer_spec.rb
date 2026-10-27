@@ -1,3 +1,5 @@
+require "tmpdir"
+
 RSpec.describe Messengerr::Renderer do
   let(:row) { { "name" => "Alice", "plan" => "Pro" } }
   let(:mapping) { { "name" => "name", "plan" => "plan" } }
@@ -57,6 +59,46 @@ RSpec.describe Messengerr::Renderer do
     it "still reports an empty column" do
       expect { described_class.render("<p>{{name}}</p>", { "name" => " " }, mapping, escape: true) }
         .to raise_error(Messengerr::RenderError, /empty/)
+    end
+  end
+
+  describe "templates are logic-free" do
+    # Nothing inside {{ }} is evaluated: anything that is not a plain placeholder aborts the run.
+    [
+      "{{#if name}}Hi{{/if}}",
+      "{{#unless name}}Hi{{/unless}}",
+      "{{#each items}}x{{/each}}",
+      "{{ name | upcase }}",
+      "{{ name + plan }}",
+      '{{name ? "a" : "b"}}',
+      "{{ name == 'Alice' }}",
+      "{{ 1 + 1 }}",
+      "{{ name.upcase }}",
+      "{{> partial}}",
+      "{{!-- comment --}}",
+      "{{name }} {{ }}"
+    ].each do |template|
+      it "refuses #{template.inspect} instead of evaluating it" do
+        expect { described_class.render(template, row, mapping) }
+          .to raise_error(Messengerr::RenderError, /unrenderable placeholder/)
+      end
+    end
+
+    it "never executes the code inside the braces" do
+      Dir.mktmpdir do |dir|
+        marker = File.join(dir, "executed")
+
+        expect { described_class.render("{{ `touch #{marker}` }}", row, mapping) }.to raise_error(Messengerr::RenderError)
+        expect(File.exist?(marker)).to be(false)
+      end
+    end
+
+    it "keeps extra braces around a valid placeholder literally (there is no unescaped variant)" do
+      expect(described_class.render("{{{name}}}", row, mapping)).to eq("{Alice}")
+    end
+
+    it "only substitutes names made of letters, digits and underscores" do
+      expect(described_class.render("{{name}} on {{ plan }}", row, mapping)).to eq("Alice on Pro")
     end
   end
 end
