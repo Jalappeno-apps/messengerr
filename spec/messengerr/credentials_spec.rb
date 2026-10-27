@@ -102,7 +102,7 @@ RSpec.describe Messengerr::Credentials do
     end
 
     it "rejects malformed keys with a clear CredentialsError (not a raw ArgumentError)" do
-      ["abc", "zz" * 32, "ab" * 31, "ab" * 33].each do |bad|
+      [ "abc", "zz" * 32, "ab" * 31, "ab" * 33 ].each do |bad|
         with_env("MESSENGERR_MASTER_KEY" => bad) do
           expect { credentials.write(:postmark, { server_token: "abc" }) }
             .to raise_error(Messengerr::CredentialsError, /64 hex characters/), "expected #{bad.length}-char key to be rejected"
@@ -111,7 +111,7 @@ RSpec.describe Messengerr::Credentials do
     end
 
     it "rejects an empty key rather than silently falling back to a key file" do
-      ["", "  "].each do |blank|
+      [ "", "  " ].each do |blank|
         with_env("MESSENGERR_MASTER_KEY" => blank) do
           expect { credentials.write(:postmark, { server_token: "abc" }) }
             .to raise_error(Messengerr::CredentialsError, /set but empty/)

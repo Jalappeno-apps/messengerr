@@ -1,0 +1,9 @@
+// Defaults for the custom variables, so every colour scheme the theme builds (including its stock
+// light and dark ones) can compile custom.scss. The `messengerr` and `messengerr-dark` schemes override these.
+$accent: #842a00 !default;
+$accent-strong: #6a2000 !default;
+$accent-soft: #fdf0dc !default;
+$surface: #f8f5ec !default;
+$muted: #6a6457 !default;
+$term-bg: #17120d !default;
+$term-bar: #211a13 !default;

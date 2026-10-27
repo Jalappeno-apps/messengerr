@@ -54,14 +54,14 @@ RSpec.describe Messengerr::Integrations::ClickSend do
       stub_request(:post, "https://rest.clicksend.com/v3/sms/send")
         .to_return(status: 401, body: "{}")
 
-      results = integration.send_batch([Messengerr::Delivery.new(recipient:, body: "Hi", subject: nil)], options)
+      results = integration.send_batch([ Messengerr::Delivery.new(recipient:, body: "Hi", subject: nil) ], options)
       expect(results.first.status).to eq(:failed)
       expect(results.first.reason).to include("401")
       expect(results.first.uncertain).to be(false) # a 4xx is a definite rejection
     end
 
     describe "uncertain vs definite failures" do
-      let(:deliveries) { [Messengerr::Delivery.new(recipient:, body: "Hi", subject: nil)] }
+      let(:deliveries) { [ Messengerr::Delivery.new(recipient:, body: "Hi", subject: nil) ] }
       let(:url) { "https://rest.clicksend.com/v3/sms/send" }
 
       def outcome(&stubbing)
@@ -70,14 +70,14 @@ RSpec.describe Messengerr::Integrations::ClickSend do
       end
 
       it "treats 4xx (incl. 429) as definite" do
-        [400, 401, 422, 429].each do |status|
+        [ 400, 401, 422, 429 ].each do |status|
           result = outcome { stub_request(:post, url).to_return(status:, body: "{}") }
           expect(result.uncertain).to be(false), "expected #{status} to be definite"
         end
       end
 
       it "treats 5xx, including gateway 502/504, as uncertain" do
-        [500, 502, 503, 504].each do |status|
+        [ 500, 502, 503, 504 ].each do |status|
           result = outcome { stub_request(:post, url).to_return(status:, body: "gateway") }
           expect(result).to have_attributes(status: :failed, uncertain: true), "expected #{status} to be uncertain"
         end
@@ -100,7 +100,7 @@ RSpec.describe Messengerr::Integrations::ClickSend do
       end
 
       it "treats failing to connect (nothing was sent) as definite" do
-        [Net::OpenTimeout, Errno::ECONNREFUSED, SocketError, OpenSSL::SSL::SSLError].each do |error|
+        [ Net::OpenTimeout, Errno::ECONNREFUSED, SocketError, OpenSSL::SSL::SSLError ].each do |error|
           result = outcome { stub_request(:post, url).to_raise(error) }
           expect(result).to have_attributes(status: :failed, uncertain: false), "expected #{error} to be definite"
         end
@@ -111,7 +111,7 @@ RSpec.describe Messengerr::Integrations::ClickSend do
         expect(integration.send_batch(deliveries, options).first.uncertain).to be(true)
 
         stub_request(:post, url).to_return(
-          status: 200, body: { data: { messages: [{ message_id: "m", status: "INVALID_RECIPIENT" }] } }.to_json
+          status: 200, body: { data: { messages: [ { message_id: "m", status: "INVALID_RECIPIENT" } ] } }.to_json
         )
         expect(integration.send_batch(deliveries, options).first.uncertain).to be(false)
       end

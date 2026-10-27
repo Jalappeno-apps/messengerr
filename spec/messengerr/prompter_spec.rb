@@ -2,7 +2,7 @@ RSpec.describe Messengerr::Prompter do
   def prompter_for(script)
     input = StringIO.new(script)
     output = StringIO.new
-    [described_class.new(input:, output:), output]
+    [ described_class.new(input:, output:), output ]
   end
 
   it "asks and reads a line" do

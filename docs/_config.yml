@@ -1,0 +1,77 @@
+title: messengerr
+description: Send templated email and SMS to a CSV contact list, safely, from your terminal
+url: https://jalappeno-apps.github.io
+baseurl: /messengerr
+lang: en
+author:
+  name: Daiwick
+  url: https://daiwick.com
+
+# SEO: rendered by jekyll-seo-tag (included by the theme's <head>); sitemap.xml by jekyll-sitemap
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+social:
+  type: Organization
+  name: Daiwick
+  links:
+    - https://github.com/jalappeno-apps/messengerr
+    - https://rubygems.org/gems/messengerr
+
+theme: just-the-docs
+color_scheme: messengerr
+enable_copy_code_button: true
+
+callouts:
+  note:
+    title: Note
+    color: blue
+  tip:
+    title: Tip
+    color: green
+  warning:
+    title: Warning
+    color: yellow
+  important:
+    title: Important
+    color: red
+
+search_enabled: true
+heading_anchors: true
+back_to_top: true
+back_to_top_text: Back to top
+
+aux_links:
+  GitHub: https://github.com/jalappeno-apps/messengerr
+  RubyGems: https://rubygems.org/gems/messengerr
+aux_links_new_tab: true
+
+footer_content: Maintained by <a href="https://daiwick.com">Daiwick</a>. Released under the MIT License.
+
+# Not site pages
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - _tools
+
+# The theme still uses Sass APIs that Dart Sass has deprecated; hide that upstream noise.
+sass:
+  quiet_deps: true
+  silence_deprecations: [ import, global-builtin, color-functions ]
+
+# Every page uses the theme's default layout (index.md overrides it with `home`).
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+      # jekyll-seo-tag reads these per page
+      image:
+        path: /assets/images/social-card.png
+        width: 1200
+        height: 630
+        alt: "messengerr: send templated messages to a list, safely"
+      twitter:
+        card: summary_large_image

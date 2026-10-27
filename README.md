@@ -1,106 +1,76 @@
-# Messengerr
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jalappeno-apps/messengerr/main/docs/assets/images/logo-lockup-dark.svg">
+    <img alt="messengerr" src="https://raw.githubusercontent.com/jalappeno-apps/messengerr/main/docs/assets/images/logo-lockup.svg" height="56">
+  </picture>
+</p>
 
-Send templated messages to a CSV contact list over email and SMS — interactively, from your terminal.
+<p align="center"><b>Send templated email and SMS to a CSV contact list, safely, from your terminal.</b></p>
 
-Write a message with `{{placeholders}}`, point it at a CSV, map each placeholder to a column, and messengerr validates the contacts, shows you any defects, sends through your configured integration, and offers retries for failures.
+Write one message with `{{placeholders}}`, point messengerr at a CSV, and it validates the contacts, shows you exactly what will go out, sends through your provider, and keeps a record of every result.
+
+**Documentation: [jalappeno-apps.github.io/messengerr](https://jalappeno-apps.github.io/messengerr/)**
 
 ## Install
+
+Requires Ruby 3.2 or newer.
 
 ```sh
 gem install messengerr
 ```
 
-## How it works
+## Quick start
 
-| Piece | What it is |
+```sh
+messengerr credentials setup postmark   # or clicksend; keys are verified live, then stored encrypted
+messengerr send --dry-run               # walk the wizard and preview, sending nothing
+messengerr send                         # preview, confirm, send
+```
+
+Given a CSV like
+
+```text
+name,email,plan
+Ann,ann@example.com,Pro
+Bob,bob@example.com,Team
+```
+
+and the message `Hi {{name}}, your {{plan}} invoice is ready.`, the preview shows:
+
+```text
+--- Preview (2 messages) ---
+To: ann@example.com
+Subject: Invoice for Ann
+Body: Hi Ann, your Pro invoice is ready.
+...
+```
+
+## Why it is safe to point at a real list
+
+- **Preview first.** You see the count and the first rendered messages, then confirm. `--dry-run` sends nothing.
+- **Bad data is surfaced, not sent.** Invalid contacts are listed by row. A malformed or empty placeholder aborts the run instead of going out as literal text.
+- **A record of every result.** Each outcome is appended to a ledger as it happens, so a crash or Ctrl-C never loses track of who was messaged.
+- **Resume without guessing.** `--resume` skips recipients already sent. Failures that might already have been delivered are marked *uncertain* and flagged before you retry.
+
+## Integrations
+
+| Integration | Delivers |
 |---|---|
-| **Integrations** | Providers that deliver your messages. Scoped by delivery method (`email`, `sms`). Built-ins: **Postmark** (email), **ClickSend** (SMS). |
-| **Credentials** | Integration API keys, stored in a Rails-credentials-style AES-256-GCM encrypted YAML file with a per-install master key — both inside the installed gem directory, so they're removed when the gem is uninstalled. |
-| **Sending options** | Per-integration option classes (`from`, `batch_size`, `rate_limit`, plus integration-specific like Postmark's `tag`/`message_stream`). |
+| Postmark | email |
+| ClickSend | SMS |
 
-## Credentials
+New providers follow a small contract. See [Writing an integration](https://jalappeno-apps.github.io/messengerr/writing-an-integration.html).
 
-```sh
-messengerr credentials setup postmark    # interactive: prompts keys, verifies live, stores encrypted
-messengerr credentials list              # what's registered and configured
-messengerr credentials verify postmark   # re-check stored credentials against the API
-messengerr credentials delete            # remove the encrypted file
-messengerr credentials delete --purge    # also remove the master key
-messengerr integrations                  # list integrations by delivery method
-```
+## Good to know
 
-The encrypted file lives at `<gem>/config/credentials.yml.enc`, the master key at `<gem>/config/master.key` (both `chmod 600`). If the gem is installed to a read-only location, you'll get a clear error. If the master key is lost, the file can't be decrypted — run `credentials delete` to reset.
+messengerr sends plain-text, single-line messages and does not track delivery. It adds no unsubscribe links and does not check consent: laws such as CAN-SPAM, GDPR/PECR and the TCPA are the sender's responsibility. Credentials are stored in an encrypted file under `~/.config/messengerr`, with the key beside it by default, and `gem uninstall` does not remove them. Read [Limitations](https://jalappeno-apps.github.io/messengerr/limitations.html) and [Credentials](https://jalappeno-apps.github.io/messengerr/credentials.html) before a large send.
 
-## Sending
+## Contributing
 
-```sh
-messengerr send
-```
-
-The wizard walks you through:
-
-1. **Delivery method** — `email` or `sms`
-2. **Integration** — configured integrations for that method
-3. **Message** — use `{{column_name}}` placeholders (`Hi {{first_name}}, your code is {{code}}`); email also asks for a subject
-4. **CSV path** — local file; columns are shown
-5. **Placeholder mapping** — map each `{{placeholder}}` to a CSV column
-6. **Contact column** — which column holds the email address / phone number
-7. **Validation** — emails checked by regex, phones normalized to E.164 via `phonelib`. Defects are listed by row; choose to **drop them** or **abort** to fix the CSV
-8. **Send** — batched with rate limiting; per-recipient failures are collected, never abort the run
-9. **Failures** — listed with reasons; retry **failed sends only**
-
-### Phone numbers
-
-Set a default country for local-format numbers:
-
-```sh
-export MESSENGERR_DEFAULT_COUNTRY=US
-```
-
-## Writing a community integration
-
-Package three small classes (recommended gem name `messengerr-<name>`):
-
-```ruby
-# the delivery contract
-class Acme < Messengerr::Integrations::Base
-  def self.delivery_method = :sms
-
-  def initialize(credentials) = @credentials = credentials
-
-  def verify!
-    # cheap live API check; raise Messengerr::IntegrationError on failure
-  end
-
-  def send_batch(pairs, options)
-    # pairs = [[recipient, rendered_message], ...]
-    # → [Messengerr::Result.new(recipient:, status: :sent|:failed, reason:, provider_id:)]
-  end
-end
-
-# the interactive setup
-class Acme < Messengerr::Setups::Base
-  def self.required_keys = [:api_key]
-  def self.optional_keys = [:region]
-end
-
-# the options (optional — base provides from/batch_size/rate_limit/metadata)
-class Acme < Messengerr::SendingOptions::Base
-  option :schedule
-end
-
-Messengerr.register_integration(Acme)
-```
-
-Put them in the parallel namespaces `Messengerr::Integrations::<Name>`, `Messengerr::Setups::<Name>`, `Messengerr::SendingOptions::<Name>` and the CLI picks them up automatically.
-
-## Development
-
-```sh
-bundle install
-bundle exec rspec   # 100 examples, WebMock — no real API calls
-```
+Bug reports and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and [STYLE.md](STYLE.md).
 
 ## License
 
-MIT
+Released under the [MIT License](LICENSE).
+
+Maintained by [Daiwick](https://daiwick.com).

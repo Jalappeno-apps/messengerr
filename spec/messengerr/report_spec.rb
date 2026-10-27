@@ -8,7 +8,7 @@ RSpec.describe Messengerr::Report do
         Messengerr::Result.new(recipient:, status: :sent),
         Messengerr::Result.new(recipient:, status: :failed, reason: "boom")
       ],
-      dropped: [defect]
+      dropped: [ defect ]
     )
 
     expect(report.sent_count).to eq(1)
@@ -19,7 +19,7 @@ RSpec.describe Messengerr::Report do
   end
 
   it "is ok when nothing failed" do
-    report = described_class.new(results: [Messengerr::Result.new(recipient:, status: :sent)])
+    report = described_class.new(results: [ Messengerr::Result.new(recipient:, status: :sent) ])
     expect(report).to be_ok
   end
 end

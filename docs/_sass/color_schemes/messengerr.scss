@@ -1,0 +1,29 @@
+// Light scheme: warm cream surfaces with a burnt-sienna accent (the Daiwick palette).
+// Contrast (WCAG): link on page 8.9:1, body text 14.6:1, muted text 5.7:1.
+$color-scheme: light;
+
+$accent: #842a00;
+$accent-strong: #6a2000;
+$accent-soft: #fdf0dc;
+$surface: #f8f5ec;
+$muted: #6a6457;
+$term-bg: #17120d;
+$term-bar: #211a13;
+
+$body-background-color: #fefcf7;
+$body-heading-color: #0b0e0b;
+$body-text-color: #2b261f;
+$link-color: $accent;
+$nav-child-link-color: #4d463b;
+$sidebar-color: $surface;
+$base-button-color: #f5f1e9;
+$btn-primary-color: $accent;
+$code-background-color: $term-bg;
+$code-linenumber-color: #8f877a;
+$feedback-color: #f5f1e9;
+$table-background-color: #fffefb;
+$search-background-color: #fffefb;
+$search-result-preview-color: #4d463b;
+$border-color: #e3ddd0;
+
+@import "./vendor/accessible-pygments/github-dark";

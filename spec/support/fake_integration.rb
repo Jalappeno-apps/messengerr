@@ -43,11 +43,11 @@ module Messengerr
   module Setups
     class Fake < Setups::Base
       def self.required_keys
-        [:token]
+        [ :token ]
       end
 
       def self.optional_keys
-        [:region]
+        [ :region ]
       end
 
       def self.integration_class

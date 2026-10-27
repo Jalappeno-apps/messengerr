@@ -15,7 +15,7 @@ module Messengerr
     # Fail before anything is sent if the ledger can't be written.
     def verify_writable!
       FileUtils.mkdir_p(File.dirname(@path))
-      File.open(@path, "a", 0o600) {}
+      File.open(@path, "a", 0o600) { }
     rescue SystemCallError, IOError => e
       raise Error, "cannot write ledger #{@path}: #{e.message}"
     end
@@ -61,7 +61,7 @@ module Messengerr
         entry = JSON.parse(line)
         next if entry["contact"].nil?
 
-        recipient = [entry["row_number"], entry["contact"]]
+        recipient = [ entry["row_number"], entry["contact"] ]
         next if states[recipient] == :sent
 
         states[recipient] =

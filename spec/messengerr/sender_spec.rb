@@ -32,7 +32,7 @@ RSpec.describe Messengerr::Sender do
     end.new({})
 
     described_class.new(spy, options: opts(batch_size: 1)).deliver(deliveries)
-    expect(calls.map(&:length)).to eq([1, 1, 1])
+    expect(calls.map(&:length)).to eq([ 1, 1, 1 ])
   end
 
   it "marks a batch failed+uncertain when the integration raises" do
@@ -43,8 +43,8 @@ RSpec.describe Messengerr::Sender do
     end.new({})
 
     results = described_class.new(failing, options: opts).deliver(deliveries)
-    expect(results.map(&:status).uniq).to eq([:failed])
-    expect(results.map(&:uncertain).uniq).to eq([true])
+    expect(results.map(&:status).uniq).to eq([ :failed ])
+    expect(results.map(&:uncertain).uniq).to eq([ true ])
     expect(results.first.reason).to include("connection reset")
   end
 
@@ -56,7 +56,7 @@ RSpec.describe Messengerr::Sender do
     end.new({})
 
     results = described_class.new(short, options: opts).deliver(deliveries)
-    expect(results.map(&:reason).uniq).to eq(["integration returned no result"])
+    expect(results.map(&:reason).uniq).to eq([ "integration returned no result" ])
   end
 
   it "records every result to the ledger" do
@@ -109,7 +109,7 @@ RSpec.describe Messengerr::Sender do
         results = sender.deliver(deliveries)
 
         expect(results.map(&:status)).to eq(%i[sent sent failed])
-        expect(results.map(&:uncertain)).to eq([false, false, true])
+        expect(results.map(&:uncertain)).to eq([ false, false, true ])
         expect(lines(dir).map { |e| e["status"] }).to eq(%w[sent sent failed])
       end
     end
@@ -125,7 +125,7 @@ RSpec.describe Messengerr::Sender do
       Dir.mktmpdir do |dir|
         sender = described_class.new(integration, options: opts, ledger: ledger_in(dir))
         sender.deliver(deliveries)
-        sender.deliver([deliveries[1]])
+        sender.deliver([ deliveries[1] ])
 
         expect(lines(dir).count { |e| e["contact"] == "b@x.com" }).to eq(2)
       end
@@ -155,23 +155,23 @@ RSpec.describe Messengerr::Sender do
 
     it "treats a plain IntegrationError (provider rejected it) as a definite failure" do
       results = described_class.new(raising(Messengerr::IntegrationError.new("bad key")), options: opts).deliver(deliveries)
-      expect(results.map(&:uncertain).uniq).to eq([false])
+      expect(results.map(&:uncertain).uniq).to eq([ false ])
     end
 
     it "treats UncertainError as uncertain" do
       results = described_class.new(raising(Messengerr::UncertainError.new("timeout")), options: opts).deliver(deliveries)
-      expect(results.map(&:uncertain).uniq).to eq([true])
+      expect(results.map(&:uncertain).uniq).to eq([ true ])
     end
 
     it "treats unexpected exceptions as uncertain" do
       results = described_class.new(raising(RuntimeError.new("bug")), options: opts).deliver(deliveries)
-      expect(results.map(&:uncertain).uniq).to eq([true])
+      expect(results.map(&:uncertain).uniq).to eq([ true ])
     end
 
     it "marks recipients an integration forgot to report as uncertain" do
       short = Class.new(Messengerr::Integrations::Fake) { def send_batch(*) = [] }.new({})
       results = described_class.new(short, options: opts).deliver(deliveries)
-      expect(results.map(&:uncertain).uniq).to eq([true])
+      expect(results.map(&:uncertain).uniq).to eq([ true ])
     end
   end
 

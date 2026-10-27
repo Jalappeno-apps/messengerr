@@ -1,0 +1,28 @@
+// Dark scheme: warm near-black with an orange accent. Link on page 8.1:1, body text 14.9:1.
+$color-scheme: dark;
+
+$accent: #ed9235;
+$accent-strong: #f7c790;
+$accent-soft: #2a1d10;
+$surface: #17130e;
+$muted: #a39b8b;
+$term-bg: #0b0e0b;
+$term-bar: #171a17;
+
+$body-background-color: #100d0a;
+$body-heading-color: #fefcf7;
+$body-text-color: #e8e1d3;
+$link-color: $accent;
+$nav-child-link-color: #cfc7b6;
+$sidebar-color: $surface;
+$base-button-color: #221c15;
+$btn-primary-color: #b4440c;
+$code-background-color: $term-bg;
+$code-linenumber-color: #8f877a;
+$feedback-color: #1a1510;
+$table-background-color: #15110c;
+$search-background-color: #1a1510;
+$search-result-preview-color: #cfc7b6;
+$border-color: #2e2820;
+
+@import "./vendor/accessible-pygments/github-dark";

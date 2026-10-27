@@ -13,6 +13,8 @@ module Messengerr
     #        --rate-limit N, --from ADDRESS
     class SendCommand
       SMS_SEGMENT = 160
+      # Sending options settable from flags (the integrations support more; see docs/integrations.md).
+      CLI_OPTIONS = %i[from batch_size rate_limit].freeze
 
       def initialize(prompter:, credentials:)
         @prompter = prompter
@@ -104,7 +106,7 @@ module Messengerr
       def collect_message(method)
         message = @prompter.ask("Message (use {{column}} placeholders):")
         subject = ask_subject if method == :email
-        [message, subject]
+        [ message, subject ]
       end
 
       # Email needs a subject; re-ask now rather than failing after the wizard.
@@ -132,7 +134,7 @@ module Messengerr
         placeholders = Placeholder.extract(message) + Placeholder.extract(subject)
         placeholders.uniq.to_h do |placeholder|
           column = @prompter.choose("Map {{#{placeholder}}} to column:", source.headers)
-          [placeholder, column]
+          [ placeholder, column ]
         end
       end
 
@@ -212,7 +214,7 @@ module Messengerr
       # How the ledger identifies a recipient: row + contact, so repeated
       # contacts are tracked per row.
       def recipient_key(delivery)
-        [delivery.recipient.row_number, delivery.recipient.contact]
+        [ delivery.recipient.row_number, delivery.recipient.contact ]
       end
 
       # Earlier attempts that timed out etc. may have been delivered; --resume
@@ -290,7 +292,7 @@ module Messengerr
 
       def build_options(integration_class)
         options = integration_class.options_class.new
-        %i[from batch_size rate_limit].each do |key|
+        CLI_OPTIONS.each do |key|
           options.public_send("#{key}=", @flags[key]) if @flags[key] && options.respond_to?("#{key}=")
         end
         options

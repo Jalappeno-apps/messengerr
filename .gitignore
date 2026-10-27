@@ -1,6 +1,15 @@
 /.bundle/
 /pkg/
-/config/credentials.yml.enc
-/config/master.key
 /messengerr-ledger-*.jsonl
 /AUDIT.md
+
+# docs site build output and local gems
+/docs/_site/
+/docs/.jekyll-cache/
+/docs/.bundle/
+/docs/vendor/
+/docs/Gemfile.lock
+/docs/.sass-cache/
+
+# local trial files (real addresses, never commit)
+/trial/

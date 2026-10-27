@@ -69,11 +69,11 @@ RSpec.describe Messengerr::Ledger do
 
     it "lists recipients sent, as [row_number, contact]" do
       expect(described_class.sent_recipients(@path))
-        .to contain_exactly([2, "sent@x.com"], [5, "recovered@x.com"])
+        .to contain_exactly([ 2, "sent@x.com" ], [ 5, "recovered@x.com" ])
     end
 
     it "lists recipients whose last outcome is uncertain, ignoring ones later sent" do
-      expect(described_class.uncertain_recipients(@path)).to eq([[4, "maybe@x.com"]])
+      expect(described_class.uncertain_recipients(@path)).to eq([ [ 4, "maybe@x.com" ] ])
     end
 
     it "treats a missing file as empty" do
@@ -88,8 +88,8 @@ RSpec.describe Messengerr::Ledger do
       ledger.record(result("dup@x.com", :sent, row: 2))
       ledger.record(result("dup@x.com", :failed, uncertain: true, row: 5))
 
-      expect(described_class.sent_recipients(@path)).to eq([[2, "dup@x.com"]])
-      expect(described_class.uncertain_recipients(@path)).to eq([[5, "dup@x.com"]])
+      expect(described_class.sent_recipients(@path)).to eq([ [ 2, "dup@x.com" ] ])
+      expect(described_class.uncertain_recipients(@path)).to eq([ [ 5, "dup@x.com" ] ])
     end
   end
 end

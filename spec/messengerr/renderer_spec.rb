@@ -22,7 +22,7 @@ RSpec.describe Messengerr::Renderer do
   end
 
   it "never sends a malformed placeholder literally" do
-    ["Hi {{first-name}}", "Hi {{first name}}", "plain {{}} text", "Hi {{name}} }}"].each do |template|
+    [ "Hi {{first-name}}", "Hi {{first name}}", "plain {{}} text", "Hi {{name}} }}" ].each do |template|
       expect { described_class.render(template, row, mapping) }
         .to raise_error(Messengerr::RenderError, /unrenderable placeholder/)
     end

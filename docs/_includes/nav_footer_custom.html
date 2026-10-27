@@ -1,0 +1,33 @@
+<button class="theme-toggle" type="button" aria-label="Switch between light and dark mode">
+  <span aria-hidden="true">&#9680;</span>
+  <span class="theme-toggle-label">Dark mode</span>
+</button>
+<script>
+  // This include is rendered more than once (sidebar and mobile menu), so use one delegated handler.
+  (function () {
+    if (window.__messengerrThemeToggle) return;
+    window.__messengerrThemeToggle = true;
+
+    function current() { return document.documentElement.getAttribute("data-mode") === "dark" ? "dark" : "light"; }
+
+    function render() {
+      var text = current() === "dark" ? "Light mode" : "Dark mode";
+      document.querySelectorAll(".theme-toggle-label").forEach(function (el) { el.textContent = text; });
+    }
+
+    document.addEventListener("click", function (event) {
+      if (!event.target.closest(".theme-toggle")) return;
+      var next = current() === "dark" ? "light" : "dark";
+      var link = document.querySelector('link[rel="stylesheet"]');
+      var href = link.getAttribute("href");
+      var base = href.substring(0, href.lastIndexOf("/") + 1);
+      link.setAttribute("href", base + (next === "dark" ? "just-the-docs-messengerr-dark.css" : "just-the-docs-default.css"));
+      document.documentElement.setAttribute("data-mode", next);
+      try { localStorage.setItem("messengerr-mode", next); } catch (e) {}
+      render();
+    });
+
+    document.addEventListener("DOMContentLoaded", render);
+    render();
+  })();
+</script>

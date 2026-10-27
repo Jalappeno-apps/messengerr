@@ -18,7 +18,7 @@ RSpec.describe Messengerr::ContactValidator do
   end
 
   it "tracks 1-based row numbers offset by the header" do
-    rows = [{ "email" => "bad" }]
+    rows = [ { "email" => "bad" } ]
     outcome = described_class.validate(rows, "email", :email)
     expect(outcome[:defects].first.row_number).to eq(2)
   end
@@ -34,11 +34,11 @@ RSpec.describe Messengerr::ContactValidator do
   end
 
   it "keeps repeated contacts: one row is one message" do
-    rows = [{ "e" => "a@x.com" }, { "e" => "A@x.com" }, { "e" => " a@x.com " }]
+    rows = [ { "e" => "a@x.com" }, { "e" => "A@x.com" }, { "e" => " a@x.com " } ]
     outcome = described_class.validate(rows, "e", :email)
 
     expect(outcome[:valid].map(&:contact)).to eq(%w[a@x.com a@x.com a@x.com])
-    expect(outcome[:valid].map(&:row_number)).to eq([2, 3, 4])
+    expect(outcome[:valid].map(&:row_number)).to eq([ 2, 3, 4 ])
     expect(outcome[:defects]).to be_empty
   end
 end

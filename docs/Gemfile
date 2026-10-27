@@ -1,0 +1,6 @@
+source "https://rubygems.org"
+
+gem "jekyll", "4.4.1"
+gem "just-the-docs", "0.12.0"
+gem "jekyll-sitemap", "1.4.0" # sitemap.xml
+gem "webrick", "1.9.2" # `jekyll serve` on Ruby 3+

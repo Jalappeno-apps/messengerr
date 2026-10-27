@@ -79,7 +79,7 @@ module Messengerr
         unless hex.match?(/\A[0-9a-fA-F]{64}\z/)
           raise CredentialsError, "#{@key_path} is malformed — run `messengerr credentials delete --purge` to reset"
         end
-        [hex].pack("H*")
+        [ hex ].pack("H*")
       elsif read_only
         raise CredentialsError,
               "credentials exist but no master key is available — set MESSENGERR_MASTER_KEY " \
@@ -100,7 +100,7 @@ module Messengerr
               "MESSENGERR_MASTER_KEY must be 64 hex characters (32 bytes)" \
               "#{' — it is set but empty' if hex.empty?}; unset it to use the key file instead"
       end
-      [hex].pack("H*")
+      [ hex ].pack("H*")
     end
 
     # Create files 0600 from birth and write atomically (temp + rename) so a

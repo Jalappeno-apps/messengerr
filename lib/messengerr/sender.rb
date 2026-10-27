@@ -94,7 +94,7 @@ module Messengerr
     end
 
     def key(recipient)
-      [recipient.row_number, recipient.contact]
+      [ recipient.row_number, recipient.contact ]
     end
 
     def throttle

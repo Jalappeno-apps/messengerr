@@ -3,23 +3,26 @@ require_relative "lib/messengerr/version"
 Gem::Specification.new do |spec|
   spec.name          = "messengerr"
   spec.version       = Messengerr::VERSION
-  spec.authors       = ["Messengerr contributors"]
+  spec.authors       = [ "Daiwick" ]
   spec.summary       = "Send templated messages to CSV contact lists over email and SMS."
   spec.description   = "Interactive CLI that renders {{placeholder}} messages against a CSV " \
                        "contact list and dispatches through pluggable services scoped by " \
                        "delivery method (email, sms)."
-  spec.homepage      = "https://github.com/brolinr/messengerr"
+  spec.homepage      = "https://github.com/jalappeno-apps/messengerr"
   spec.license       = "MIT"
   spec.required_ruby_version = ">= 3.2"
   spec.metadata = {
-    "source_code_uri" => "https://github.com/brolinr/messengerr",
+    "documentation_uri" => "https://jalappeno-apps.github.io/messengerr/",
+    "source_code_uri" => "https://github.com/jalappeno-apps/messengerr",
+    "bug_tracker_uri" => "https://github.com/jalappeno-apps/messengerr/issues",
+    "changelog_uri" => "https://github.com/jalappeno-apps/messengerr/blob/main/CHANGELOG.md",
     "rubygems_mfa_required" => "true"
   }
 
   spec.files = Dir["lib/**/*", "exe/*", "README.md", "LICENSE"]
   spec.bindir = "exe"
-  spec.executables = ["messengerr"]
-  spec.require_paths = ["lib"]
+  spec.executables = [ "messengerr" ]
+  spec.require_paths = [ "lib" ]
 
   spec.add_dependency "base64", "~> 0.2"
   spec.add_dependency "csv", "~> 3.3"

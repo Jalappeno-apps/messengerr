@@ -17,7 +17,7 @@ RSpec.describe Messengerr::CLI::CredentialsCommand do
     output = StringIO.new
     prompter = Messengerr::Prompter.new(input:, output:)
     command = described_class.new(prompter:, credentials: @credentials)
-    [command.run(args), output.string]
+    [ command.run(args), output.string ]
   end
 
   it "setup runs the integration's wizard" do

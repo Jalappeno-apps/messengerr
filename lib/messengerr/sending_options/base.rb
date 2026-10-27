@@ -38,7 +38,7 @@ module Messengerr
       end
 
       def to_h
-        self.class.options.to_h { |name| [name, public_send(name)] }
+        self.class.options.to_h { |name| [ name, public_send(name) ] }
       end
     end
   end

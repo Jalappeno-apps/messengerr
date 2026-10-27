@@ -31,18 +31,18 @@ RSpec.describe Messengerr::Integrations::Postmark do
     it "delivers each Delivery with its own subject and returns sent Results" do
       stub = stub_request(:post, "https://api.postmarkapp.com/email")
              .to_return(status: 200, body: '{"MessageID":"abc-123","ErrorCode":0}')
-      results = integration.send_batch([delivery], options)
+      results = integration.send_batch([ delivery ], options)
 
       expect(results.first).to be_sent
       expect(results.first.provider_id).to eq("abc-123")
-      expect(stub.with { |req| JSON.parse(req.body).values_at("Subject", "TextBody", "To") == ["Hello", "Hi there", "you@y.com"] })
+      expect(stub.with { |req| JSON.parse(req.body).values_at("Subject", "TextBody", "To") == [ "Hello", "Hi there", "you@y.com" ] })
         .to have_been_requested
     end
 
     it "returns a failed Result when the API rejects a message" do
       stub_request(:post, "https://api.postmarkapp.com/email")
         .to_return(status: 422, body: '{"ErrorCode":300,"Message":"Invalid email"}')
-      results = integration.send_batch([delivery], options)
+      results = integration.send_batch([ delivery ], options)
 
       expect(results.first.status).to eq(:failed)
       expect(results.first.reason).to eq("Invalid email")
@@ -52,10 +52,10 @@ RSpec.describe Messengerr::Integrations::Postmark do
     describe "uncertain vs definite failures" do
       let(:url) { "https://api.postmarkapp.com/email" }
 
-      def outcome = integration.send_batch([delivery], options).first
+      def outcome = integration.send_batch([ delivery ], options).first
 
       it "treats 401 and 422 as definite" do
-        [401, 422].each do |status|
+        [ 401, 422 ].each do |status|
           stub_request(:post, url).to_return(status:, body: '{"ErrorCode":300,"Message":"no"}')
           expect(outcome.uncertain).to be(false), "expected #{status} to be definite"
         end
@@ -81,7 +81,7 @@ RSpec.describe Messengerr::Integrations::Postmark do
       stub_request(:post, "https://api.postmarkapp.com/email")
         .to_return(status: 200, body: '{"MessageID":"x","ErrorCode":0}')
       yielded = []
-      integration.send_batch([delivery, delivery], options) { |r| yielded << r }
+      integration.send_batch([ delivery, delivery ], options) { |r| yielded << r }
 
       expect(yielded.length).to eq(2)
     end
@@ -89,7 +89,7 @@ RSpec.describe Messengerr::Integrations::Postmark do
     it "fails a delivery that has no subject without calling the API" do
       stub = stub_request(:post, "https://api.postmarkapp.com/email")
       no_subject = Messengerr::Delivery.new(recipient:, body: "Hi", subject: nil)
-      results = integration.send_batch([no_subject], options)
+      results = integration.send_batch([ no_subject ], options)
 
       expect(results.first.status).to eq(:failed)
       expect(results.first.reason).to match(/subject is required/)
@@ -100,7 +100,7 @@ RSpec.describe Messengerr::Integrations::Postmark do
       stub = stub_request(:post, "https://api.postmarkapp.com/email")
              .to_return(status: 200, body: '{"MessageID":"x","ErrorCode":0}')
       fallback = Messengerr::SendingOptions::Postmark.new(subject: "Default")
-      integration.send_batch([Messengerr::Delivery.new(recipient:, body: "Hi", subject: nil)], fallback)
+      integration.send_batch([ Messengerr::Delivery.new(recipient:, body: "Hi", subject: nil) ], fallback)
 
       expect(stub.with { |req| JSON.parse(req.body)["Subject"] == "Default" }).to have_been_requested
     end

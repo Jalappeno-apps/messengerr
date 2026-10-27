@@ -5,7 +5,7 @@ RSpec.describe Messengerr::Placeholder do
   end
 
   it "tolerates whitespace inside braces" do
-    expect(described_class.extract("{{ name }}")).to eq(["name"])
+    expect(described_class.extract("{{ name }}")).to eq([ "name" ])
   end
 
   it "returns [] when no placeholders" do

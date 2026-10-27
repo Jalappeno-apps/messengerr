@@ -16,7 +16,7 @@ RSpec.describe Messengerr::Setups::Base do
     output = StringIO.new
     prompter = Messengerr::Prompter.new(input:, output:)
     setup = Messengerr::Setups::Fake.new(prompter:, credentials: @credentials)
-    [setup, output]
+    [ setup, output ]
   end
 
   it "prompts required keys, verifies, and stores credentials" do

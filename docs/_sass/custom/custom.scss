@@ -1,0 +1,515 @@
+// ---------------------------------------------------------------- brand font
+// Nunito ExtraBold/Bold (SIL OFL, see assets/fonts/Nunito-OFL.txt): the rounded face of the logo wordmark,
+// used for headings and the site name only. Latin subset, ~20 KB; body text stays on the system stack.
+@font-face {
+  font-family: "Nunito";
+  // relative to the compiled stylesheet at assets/css/ (Liquid is not processed inside _sass partials)
+  src: url("../fonts/nunito-heading.woff2") format("woff2");
+  font-weight: 600 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+$font-brand: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+// ---------------------------------------------------------------- base
+$font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+$font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+body {
+  font-family: $font-sans;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.65;
+}
+
+.main-content {
+  line-height: 1.7;
+
+  // a comfortable measure for prose; tables and code may still use the full width
+  > p,
+  > ul,
+  > ol,
+  > blockquote,
+  > h2,
+  > h3,
+  > h4 {
+    max-width: 46rem;
+  }
+
+  h1 {
+    font-family: $font-brand;
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.4em;
+  }
+
+  h2 {
+    font-family: $font-brand;
+    margin-top: 2.2em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid $border-color;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    font-family: $font-brand;
+    margin-top: 1.8em;
+    font-weight: 700;
+  }
+
+  a:not(.btn):not(.anchor-heading) {
+    text-decoration: none;
+    background-image: none;
+    border-bottom: 1px solid rgba($link-color, 0.35);
+
+    &:hover {
+      border-bottom-color: $link-color;
+    }
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid $border-color;
+    margin: 2rem 0;
+  }
+}
+
+::selection {
+  background: rgba($link-color, 0.22);
+}
+
+// ---------------------------------------------------------------- sidebar
+.side-bar {
+  border-right: 1px solid $border-color;
+
+  .site-title {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: $body-heading-color;
+  }
+}
+
+// logo mark and name, side by side (replaces the theme's image-only title; see _includes/title.html)
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  white-space: nowrap;
+}
+
+.brand-mark {
+  flex: none;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 8px;
+}
+
+.brand-name {
+  font-family: $font-brand;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: $body-heading-color;
+}
+
+.site-nav .nav-list-link {
+  border-radius: 6px;
+  margin: 1px 0.5rem;
+  padding: 0.3rem 0.6rem;
+  transition: background 0.12s;
+
+  &:hover {
+    background: rgba($link-color, 0.08);
+  }
+
+  &.active {
+    background: rgba($link-color, 0.12);
+    color: $link-color;
+    font-weight: 600;
+  }
+}
+
+.nav-list .nav-list-item .nav-list-expander {
+  border-radius: 6px;
+}
+
+// ---------------------------------------------------------------- inline code, code blocks
+code {
+  font-family: $font-mono;
+}
+
+:not(pre) > code {
+  background: rgba($link-color, 0.08);
+  color: $accent-strong;
+  border: 0;
+  border-radius: 5px;
+  padding: 0.12em 0.4em;
+  font-size: 0.88em;
+}
+
+div.highlighter-rouge,
+div.listingblock > div.content,
+figure.highlight {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 8px 24px rgba(0, 0, 0, 0.1);
+  margin: 1.2rem 0;
+}
+
+div.highlighter-rouge pre.highlight code {
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+// ---------------------------------------------------------------- tables
+.table-wrapper {
+  border-radius: 10px;
+  border: 1px solid $border-color;
+  box-shadow: none;
+  margin: 1.2rem 0;
+}
+
+table {
+  th {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $muted;
+    background: $surface;
+    font-weight: 650;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: rgba(128, 128, 128, 0.045);
+  }
+
+  td code {
+    white-space: nowrap;
+  }
+}
+
+// ---------------------------------------------------------------- buttons
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: none;
+  transition: transform 0.12s, box-shadow 0.12s;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.btn-primary {
+  color: #fff;
+  box-shadow: 0 2px 10px rgba($accent, 0.35);
+}
+
+// ---------------------------------------------------------------- callouts
+p.note,
+p.tip,
+p.warning,
+p.important,
+blockquote.note,
+blockquote.tip,
+blockquote.warning,
+blockquote.important {
+  box-shadow: none;
+  border-radius: 10px;
+  max-width: 46rem;
+}
+
+// ---------------------------------------------------------------- home page
+.hero {
+  position: relative;
+  margin: -0.5rem 0 2.5rem;
+  padding: 2.8rem 2rem 2.4rem;
+  border: 1px solid $border-color;
+  border-radius: 16px;
+  background:
+    radial-gradient(60rem 22rem at 0% 0%, rgba($accent, 0.12), transparent 60%),
+    radial-gradient(40rem 20rem at 100% 100%, rgba($accent, 0.07), transparent 60%),
+    $surface;
+
+  .eyebrow {
+    display: inline-block;
+    margin-bottom: 0.8rem;
+    padding: 0.18rem 0.65rem;
+    border-radius: 999px;
+    background: $accent-soft;
+    color: $accent-strong;
+    font-size: 0.74rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: $font-brand;
+    font-weight: 800;
+    font-size: 2.7rem;
+    line-height: 1.12;
+    margin: 0 0 0.6rem;
+    max-width: 18ch;
+  }
+
+  .lede {
+    font-size: 1.18rem;
+    color: $muted;
+    max-width: 38rem;
+    margin: 0 0 1.5rem;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .install {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    max-width: 100%;
+    padding: 0.55rem 0.9rem;
+    border-radius: 10px;
+    background: $term-bg;
+    color: #e6e8ee;
+    font-family: $font-mono;
+    font-size: 0.9rem;
+    overflow-x: auto;
+
+    .prompt {
+      color: #7d8697;
+      user-select: none;
+    }
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr));
+  gap: 1rem;
+  margin: 1.2rem 0 2.4rem;
+}
+
+.card {
+  padding: 1.15rem 1.2rem;
+  border: 1px solid $border-color;
+  border-radius: 12px;
+  background: $table-background-color;
+  transition: transform 0.14s, box-shadow 0.14s, border-color 0.14s;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba($accent, 0.45);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+  }
+
+  .icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: 0.6rem;
+    border-radius: 8px;
+    background: $accent-soft;
+    color: $accent-strong;
+    font-weight: 700;
+  }
+
+  h3 {
+    margin: 0 0 0.3rem;
+    font-size: 1rem;
+  }
+
+  .anchor-heading {
+    display: none;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: $muted;
+    line-height: 1.55;
+  }
+
+  // keep flags such as --dry-run in one piece instead of breaking at the hyphen
+  code {
+    white-space: nowrap;
+  }
+}
+
+// More specific than the theme's own `ol > li::before` numbering, which it would otherwise lose to.
+.main-content ol.steps {
+  list-style: none;
+  margin: 1rem 0 2.4rem;
+  padding: 0;
+
+  > li {
+    position: relative;
+    padding: 0 0 1.1rem 3rem;
+    margin: 0;
+
+    &::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      border-radius: 50%;
+      background: $accent;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    &:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: 0.95rem;
+      top: 2.3rem;
+      bottom: 0.2rem;
+      width: 2px;
+      background: $border-color;
+    }
+
+    strong {
+      display: block;
+      color: $body-heading-color;
+    }
+
+    span {
+      color: $muted;
+    }
+  }
+}
+
+.terminal {
+  border-radius: 12px;
+  overflow: hidden;
+  background: $term-bg;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 14px 40px rgba(0, 0, 0, 0.16);
+  margin: 1.2rem 0 2.4rem;
+  max-width: 46rem;
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.8rem;
+    background: $term-bar;
+
+    i {
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      background: #3a3f4b;
+
+      &:nth-child(1) { background: #ff5f57; }
+      &:nth-child(2) { background: #febc2e; }
+      &:nth-child(3) { background: #28c840; }
+    }
+
+    b {
+      margin-left: 0.6rem;
+      color: #7d8697;
+      font: 500 0.78rem $font-mono;
+    }
+  }
+
+  pre {
+    margin: 0;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    color: #d8dbe3;
+    font: 0.86rem/1.65 $font-mono;
+    background: transparent;
+  }
+
+  .c { color: #6f7788; }
+  .p { color: #7d8697; user-select: none; }
+  .ok { color: #3fd07a; }
+  .err { color: #ff8a7a; }
+  .k { color: #f7c790; }
+}
+
+.section-title {
+  margin-top: 2.6rem !important;
+}
+
+// ---------------------------------------------------------------- footer + theme toggle
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.2rem 0 0.9rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid $border-color;
+  border-radius: 999px;
+  background: transparent;
+  color: $nav-child-link-color;
+  font: 600 0.78rem $font-sans;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $accent;
+    color: $accent;
+  }
+}
+
+.site-footer {
+  color: $muted;
+}
+
+@media (max-width: 50rem) {
+  .hero {
+    padding: 1.8rem 1.1rem 1.5rem;
+
+    h1 {
+      font-size: 2rem;
+    }
+  }
+}
+
+// ---------------------------------------------------------------- collapsible table of contents
+details {
+  max-width: 46rem;
+  margin: 1rem 0 1.6rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid $border-color;
+  border-radius: 10px;
+  background: $surface;
+
+  summary {
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $muted;
+  }
+
+  > ol,
+  > ul {
+    margin: 0.6rem 0 0.2rem;
+    columns: 2 14rem;
+    column-gap: 2rem;
+  }
+
+  li {
+    break-inside: avoid;
+  }
+
+  li {
+    font-size: 0.92rem;
+  }
+}

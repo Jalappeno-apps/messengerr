@@ -16,7 +16,7 @@ RSpec.describe Messengerr::CLI do
 
   it "prints help on --help and no args" do
     %w[--help -h].each do |flag|
-      code, output = start([flag])
+      code, output = start([ flag ])
       expect(code).to eq(0)
       expect(output).to include("credentials")
     end
@@ -24,13 +24,13 @@ RSpec.describe Messengerr::CLI do
   end
 
   it "prints the version" do
-    code, output = start(["--version"])
+    code, output = start([ "--version" ])
     expect(code).to eq(0)
     expect(output.strip).to eq(Messengerr::VERSION)
   end
 
   it "rejects unknown commands" do
-    code, output = start(["bogus"])
+    code, output = start([ "bogus" ])
     expect(code).to eq(1)
     expect(output).to include("unknown command")
   end

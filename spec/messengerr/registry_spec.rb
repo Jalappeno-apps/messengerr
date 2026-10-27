@@ -19,7 +19,7 @@ RSpec.describe Messengerr::Registry do
     allow(credentials).to receive(:configured?).with(anything).and_return(false)
     allow(credentials).to receive(:configured?).with(:fake).and_return(true)
 
-    expect(described_class.configured(credentials)).to eq([Messengerr::Integrations::Fake])
+    expect(described_class.configured(credentials)).to eq([ Messengerr::Integrations::Fake ])
     expect(described_class.configured_by_method(:sms, credentials)).to eq([])
   end
 end
