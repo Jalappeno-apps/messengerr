@@ -69,3 +69,38 @@ jobs:
         run: |
           bundle exec rake release:notes > release-notes.md
           gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md --verify-tag
+
+  homebrew:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Points the Homebrew tap at the version just published. The gems messengerr depends on are
+    # pinned in the formula itself: if the gemspec dependencies change, update them there by hand.
+    steps:
+      - name: Update the Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TAP_TOKEN:-}" ]; then
+            echo "::warning::TAP_TOKEN is not set, so the Homebrew tap was not updated."
+            exit 0
+          fi
+          version="${TAG#v}"
+          gem_url="https://rubygems.org/gems/messengerr-${version}.gem"
+          # RubyGems can take a moment to serve a new release.
+          for _ in $(seq 1 30); do
+            curl -fsSL -o messengerr.gem "$gem_url" && break
+            sleep 10
+          done
+          test -s messengerr.gem
+          sha=$(sha256sum messengerr.gem | cut -d' ' -f1)
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/Jalappeno-apps/homebrew-messengerr.git" tap
+          cd tap
+          # Two-space indent: only the top-level url and sha256, not the gem resources.
+          sed -i -E "s|^  url .*|  url \"${gem_url}\"|; s|^  sha256 .*|  sha256 \"${sha}\"|" Formula/messengerr.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "messengerr ${version}"
+          git push origin HEAD:main

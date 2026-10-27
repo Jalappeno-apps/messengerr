@@ -88,7 +88,7 @@ The name `messengerr` is currently free on RubyGems, but a different gem named `
    git push origin vX.Y.Z
    ```
 
-7. **Approve.** The Release workflow runs `verify` (tag is on `main`, tag matches the version, changelog is dated, specs, lint, docs check), then waits for a reviewer on the `rubygems` environment, then publishes to RubyGems and creates a GitHub release from the changelog notes.
+7. **Approve.** The Release workflow runs `verify` (tag is on `main`, tag matches the version, changelog is dated, specs, lint, docs check), then waits for a reviewer on the `rubygems` environment, then publishes to RubyGems, creates a GitHub release from the changelog notes, and updates the [Homebrew tap](#homebrew).
 8. **Confirm.** Check the gem page on RubyGems, then install it in a clean directory:
 
    ```sh
@@ -97,6 +97,20 @@ The name `messengerr` is currently free on RubyGems, but a different gem named `
    ```
 
 Do not run `rake release` yourself unless you mean to publish: it tags and pushes the gem straight away. The workflow runs it for you.
+
+## Homebrew
+
+`brew install Jalappeno-apps/messengerr/messengerr` installs the gem and its own Ruby. The formula lives in a separate repository, [`Jalappeno-apps/homebrew-messengerr`](https://github.com/Jalappeno-apps/homebrew-messengerr).
+
+- **Per release:** the `homebrew` job in the release workflow rewrites the formula's `url` and `sha256` for the new version and pushes to the tap. It needs a repository secret named `TAP_TOKEN`: a fine-grained token with **Contents: read and write** on the tap repository only. If the secret is missing the job warns and skips, and the release itself is unaffected.
+- **When dependencies change:** the gems messengerr depends on are pinned as `resource` blocks in the formula and are not updated automatically. After changing the gemspec's runtime dependencies, update those blocks in the tap by hand (version and sha256 of each gem, including their own dependencies).
+- **Check a formula change** in the tap repository:
+
+  ```sh
+  brew audit --strict --new Jalappeno-apps/messengerr/messengerr
+  brew install --build-from-source Jalappeno-apps/messengerr/messengerr
+  brew test Jalappeno-apps/messengerr/messengerr
+  ```
 
 ## Rehearsal
 

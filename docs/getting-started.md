@@ -18,7 +18,14 @@ From install to your first send in a few minutes.
 
 ## Install
 
-messengerr needs Ruby 3.2 or newer.
+With [Homebrew](https://brew.sh) (macOS and Linux), which brings its own Ruby:
+
+```sh
+brew install Jalappeno-apps/messengerr/messengerr
+messengerr --version
+```
+
+Or with RubyGems, which needs Ruby 3.2 or newer:
 
 ```sh
 gem install messengerr

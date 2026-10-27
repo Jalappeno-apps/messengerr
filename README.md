@@ -13,7 +13,13 @@ Write one message with `{{placeholders}}`, point messengerr at a CSV, and it val
 
 ## Install
 
-Requires Ruby 3.2 or newer.
+With [Homebrew](https://brew.sh) (macOS and Linux), which brings its own Ruby:
+
+```sh
+brew install Jalappeno-apps/messengerr/messengerr
+```
+
+Or with RubyGems, which needs Ruby 3.2 or newer:
 
 ```sh
 gem install messengerr
@@ -70,6 +76,16 @@ Body: Hi Ann, your Pro invoice is ready.
 | ClickSend | SMS |
 
 New providers follow a small contract. See [Writing an integration](https://jalappeno-apps.github.io/messengerr/writing-an-integration.html).
+
+## Use it with Claude
+
+An optional skill lets Claude Code prepare and dry-run a send for you. Claude never sends: you run the final command yourself. It needs messengerr 0.2.0 or newer.
+
+```
+/plugin marketplace add Jalappeno-apps/messengerr_skill
+```
+
+Then install the `messengerr` plugin from the catalog and start a new session. See [Using with Claude](https://jalappeno-apps.github.io/messengerr/using-with-claude.html) for the manual install and what Claude may and may not do.
 
 ## Good to know
 
