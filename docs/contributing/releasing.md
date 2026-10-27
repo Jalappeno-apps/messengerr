@@ -28,12 +28,12 @@ Do this once, before the first release. It needs people with the right access, s
 
 A GitHub organisation cannot own a gem. RubyGems ownership belongs to user accounts, so the organisation is represented by accounts:
 
-1. **A dedicated Daiwick account** on a mailbox the team controls. It owns the gem and is the account that registers the trusted publisher. Turn on multi-factor authentication (the gem requires it to publish: `rubygems_mfa_required`), register a second device, and keep the recovery codes in the company password manager where at least two people can reach them. Check RubyGems' terms for shared or role accounts.
-2. **Named teammates as additional owners**, added right after the first release (`gem owner messengerr --add EMAIL`, or the gem's **Ownership** page), each with their own MFA. Two or more owners means no single account is the only way to manage the gem.
+1. **The first owner is a maintainer's own RubyGems account.** It registers the trusted publisher in the next step, and becomes the gem's owner on the first release. Make sure that account has multi-factor authentication set to **UI and API** (the gem requires MFA to publish: `rubygems_mfa_required`), a second device registered, and its recovery codes saved.
+2. **Add named teammates as owners right after the first release** (`gem owner messengerr --add EMAIL`, or the gem's **Ownership** page), each with their own MFA. Two or more owners means no single account is the only way to manage the gem. Ownership can later move to a shared Daiwick account or an organisation without republishing the gem.
 
-Releases are published by the workflow, not by anyone's login, so the shared account is only needed for administration.
+Releases are published by the workflow, not by anyone's login, so owner accounts are only needed for administration.
 
-**RubyGems Organizations.** RubyGems has an Organizations feature with owner, admin and maintainer roles. As of early 2026 it is in private beta: teams apply through the interest form in [the announcement](https://blog.rubygems.org/2026/02/16/organizations-beta.html). The gem can move into an organisation later without being republished.
+**RubyGems Organizations.** RubyGems has an Organizations feature with owner, admin and maintainer roles. As of early 2026 it is in private beta: teams apply through the interest form in [the announcement](https://blog.rubygems.org/2026/02/16/organizations-beta.html).
 
 ### 2. Register a pending trusted publisher
 
